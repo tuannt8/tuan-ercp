@@ -23,7 +23,6 @@
 #include "Modules/CollisionManager.h"
 #include "Cavatar.h"
 #include "CollisionResponse.h"
-#include "PhanTomCtr.h"
 #include "armadillo"
 
 

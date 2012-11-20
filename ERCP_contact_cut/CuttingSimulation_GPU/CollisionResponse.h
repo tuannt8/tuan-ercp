@@ -14,7 +14,6 @@
 #include "Modules/CuttingTool.h"
 #include "Modules/Meshfree_GPU.h"
 #include "Modules/CollisionManager.h"
-#include "PhanTomCtr.h"
 
 #include <GL/glu.h>
 #include <GL/gl.h>

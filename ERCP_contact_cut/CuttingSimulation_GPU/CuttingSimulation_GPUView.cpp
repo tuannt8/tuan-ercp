@@ -323,7 +323,7 @@ void CCuttingSimulation_GPUView::DrawView()
 	if (m_displayMode[2])
 		m_Meshfree.drawSurfObj(Vec3f(1,0.8,0.47),0);
 
-	if (m_displayMode[5])
+	if (!m_displayMode[5])
 		m_Meshfree.surfObj()->drawBVH();
 
 	if (!m_displayMode[9])

@@ -3,8 +3,6 @@
 #include "define.h"
 #include "objload.h"
 
-
-
 class LineTool
 {
 public:
