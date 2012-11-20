@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="CuttingSimulation_GPU">
+</Property><Property Name="솔루션 파일" Value="D:\Research\프로그램\ModelingAndSimulation_Meshless(2008)\CuttingSimulation_GPU.sln">
+</Property><Property Name="사용자 옵션 파일" Value="D:\Research\프로그램\ModelingAndSimulation_Meshless(2008)\CuttingSimulation_GPU.suo">
+</Property><Property Name="Date" Value="2012년 11월 19일 월요일">
+</Property><Property Name="Time" Value="오후 15:49">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="CuttingSimulation_GPU.sln" Description="파일을 D:\Research\프로그램\ModelingAndSimulation_Meshless(2008)\Backup\CuttingSimulation_GPU.sln(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="" Source="CuttingSimulation_GPU.suo" Description="파일을 D:\Research\프로그램\ModelingAndSimulation_Meshless(2008)\Backup\CuttingSimulation_GPU.suo(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="" Source="CuttingSimulation_GPU.sln" Description="솔루션을 변환했습니다.">
+</Event><Event ErrorLevel="3" Project="" Source="CuttingSimulation_GPU.sln" Description="Converted">
+</Event></UpgradeLog>
