@@ -25,7 +25,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
-			CharacterSet="1"
+			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -51,7 +51,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../include/Cuda;../include;../../include;&quot;$(CUDA_PATH)/include&quot;"
+				AdditionalIncludeDirectories="../include/Cuda;../include;../../include;&quot;$(CUDA_PATH)/include&quot;;../lib/Armadillo/Algebra_include;../include/DataTypes;./"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -76,9 +76,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="lapack_win32_MT.lib blas_win32_MT.lib hd.lib hdu.lib snapconstraints.lib glut32.lib Winmm.lib glew32.lib glaux.lib cuda.lib cutil32D.lib cudart.lib"
+				AdditionalDependencies="lapack_win32_MT.lib blas_win32_MT.lib snapconstraints.lib glut32.lib Winmm.lib glew32.lib glaux.lib cuda.lib cutil32D.lib cudart.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="../../include/lib_win32;&quot;$(CUDA_PATH)/lib/$(PlatformName)&quot;;../lib"
+				AdditionalLibraryDirectories="../../include/lib_win32;&quot;$(CUDA_PATH)/lib/$(PlatformName)&quot;;../lib;../lib/Armadillo/Algebra_Lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
