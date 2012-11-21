@@ -107,7 +107,7 @@ public:
 
 	TopologyContainer* Container;
 	TopologyModifier* Modifier;
-	AABBTree* BVHAABB; 
+	AABBTreeTri* BVHAABB; 
 };
 
 #endif

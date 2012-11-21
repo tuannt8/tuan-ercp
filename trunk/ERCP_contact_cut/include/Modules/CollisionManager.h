@@ -49,6 +49,9 @@ public:
 
 	void collisionBtwCylinderAndEdge( std::vector<Vec3f>* toolPoint, float radius, std::vector<Vec3f>* efgNode, 
 		std::vector<Vec2i>* efgEdge, std::vector<int>& colEdgeIdx );
+	void collisionBtwCylinderAndEdgeWithBVH( std::vector<Vec3f>* toolPoint, float radius, std::vector<Vec3f>* efgNode, 
+		std::vector<Vec2i>* efgEdge, AABBTreeEdge* efgBVH, std::vector<int>& colEdgeIdx );
+
 	void collisionBtwCylinderAndEfgSurfaceEdge( std::vector<Vec3f>* toolPoint, float toolRadius, 
 		std::vector<Vec3f>* surfNode, std::vector<Vec3f>* efgNode, std::vector<Vec2i>* edge, 
 		AABBTreeEdgeDiff* BVH, std::vector<int>& colEdgeIdx );
@@ -88,5 +91,7 @@ private:
 	Vec3d findPointBetweenTwoline1(Vec3d p1, Vec3d p2, Vec3d p3, Vec3d p4);
 	double projectOnLine(Vec3d r0, Vec3d direc, Vec3d P);
 	
+	void traverseEdgeBVHByLine(AABBNode* root, std::vector<Vec3f>* toolPoint, float radius, std::vector<int>& colEdgeIdx );
+
 };
 #endif

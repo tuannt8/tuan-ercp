@@ -847,6 +847,50 @@ void CollisionManager::drawCollisionInfo(Vec3d color)
 
 }
 
+void CollisionManager::collisionBtwCylinderAndEdgeWithBVH( std::vector<Vec3f>* toolPoint, float radius, std::vector<Vec3f>* efgNode, std::vector<Vec2i>* efgEdge, AABBTreeEdge* efgBVH, std::vector<int>& colEdgeIdx )
+{
+	std::vector<int> pEdgeIdx;
+	traverseEdgeBVHByLine(efgBVH->root(), toolPoint, radius, pEdgeIdx);
+
+	GeometricFunc func;
+	for (int i=0; i<pEdgeIdx.size(); i++)
+	{
+		Vec2i curE = efgEdge->at(pEdgeIdx[i]);
+		float dist = func.distanceBtwLineAndLine((*toolPoint)[0], (*toolPoint)[1], 
+			efgNode->at(curE[0]), efgNode->at(curE[1]));
+		if (dist<radius)
+		{
+			colEdgeIdx.push_back(pEdgeIdx[i]);
+		}
+	}
+	VectorFunc vecFunc;
+	vecFunc.arrangeVector(colEdgeIdx);
+}
+
+void CollisionManager::traverseEdgeBVHByLine(AABBNode* root, std::vector<Vec3f>* toolPoint, float radius, std::vector<int>& colEdgeIdx )
+{
+	// 1. distance computation between bounding boxes 
+	GeometricFunc func;
+	Box box; box.leftDown=root->LeftDown; box.rightUp=root->RightUp; box.center=(box.leftDown+box.rightUp)/2.0;
+	Vec3f center = box.center;
+
+	float dis = radius + (root->RightUp - root->LeftDown).norm()/2;
+
+	if(func.distanceBtwPointAndLine(center, (*toolPoint)[0], (*toolPoint)[1])<dis)
+	{
+		if(root->End)
+		{
+			colEdgeIdx.push_back(root->IndexInLeafNode);
+			return;
+		}
+		else
+		{
+			traverseEdgeBVHByLine(root->Left, toolPoint, radius, colEdgeIdx);
+			traverseEdgeBVHByLine(root->Right, toolPoint, radius, colEdgeIdx);
+		}
+	}
+}
+
 void CollisionManager::collisionBtwCylinderAndEdge( std::vector<Vec3f>* toolPoint, float radius, 
 												   std::vector<Vec3f>* efgNode, std::vector<Vec2i>* efgEdge, std::vector<int>& colEdgeIdx )
 {
@@ -867,17 +911,36 @@ void CollisionManager::collisionBtwCylinderAndEfgSurfaceEdge( std::vector<Vec3f>
 															 std::vector<Vec3f>* surfNode, std::vector<Vec3f>* efgNode, std::vector<Vec2i>* edge, 
 															 AABBTreeEdgeDiff* BVH, std::vector<int>& colEdgeIdx )
 {
-	GeometricFunc func;
-	for (int i=0; i<edge->size(); i++)
+ 	GeometricFunc func;
+
+// 	arrayInt test;
+// 	for (int i=0; i<edge->size(); i++)
+// 	{
+// 		Vec2i curE = edge->at(i);
+// 		float dist = func.distanceBtwLineAndLine(toolPoint->at(0), toolPoint->at(1),
+// 			surfNode->at(curE[0]), efgNode->at(curE[1]));
+// 
+// 		if (dist < toolRadius)
+// 		{
+// 			test.push_back(i);
+// 		}
+// 	}
+
+	std::vector<int> pCollided;
+	traverseEdgeBVHByLine(BVH->root(), toolPoint, toolRadius, pCollided);
+
+	for (int i=0; i<pCollided.size(); i++)
 	{
-		Vec2i curE = edge->at(i);
+		Vec2i curE = edge->at(pCollided[i]);
 		float dist = func.distanceBtwLineAndLine(toolPoint->at(0), toolPoint->at(1),
-			surfNode->at(curE[0]), efgNode->at(curE[1]));
+							surfNode->at(curE[0]), efgNode->at(curE[1]));
 
 		if (dist < toolRadius)
 		{
-			colEdgeIdx.push_back(i);
+			colEdgeIdx.push_back(pCollided[i]);
 		}
 	}
 
+	VectorFunc vecFunc;
+	vecFunc.arrangeVector(colEdgeIdx);
 }

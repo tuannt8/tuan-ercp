@@ -82,6 +82,7 @@ public:
 	//AABB tree update for topology change
 	void removeNode(AABBNode* node);
 	void addNode(AABBNode* node);
+	void addNode(AABBNode* _root, AABBNode* newNode);
 	
 	//update depth
 	void updateDepth(AABBNode* root);

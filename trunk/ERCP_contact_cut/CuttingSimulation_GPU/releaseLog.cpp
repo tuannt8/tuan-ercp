@@ -84,3 +84,19 @@ void releaseLog::logMatrix( double* A, int row, int col, char* fileName/*="matri
 {
 	logMatrix((float*)A, row, col, fileName);
 }
+
+void releaseLog::logVectorInt( std::vector<int> &v, char* fileName/*="vectorInt.txt"*/ )
+{
+	CString path;
+	path.Format("../DebugLog/%s", (char*)fileName);
+	FILE* temp = fopen(path.GetBuffer(), ("w"));
+	if (temp)
+	{
+		fprintf(temp, "Log vector: %d\n", v.size());
+		for (int i=0; i<v.size(); i++)
+		{
+			fprintf(temp, "%d  ", v[i]);
+		}
+		fclose(temp);
+	}
+}

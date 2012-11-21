@@ -89,7 +89,32 @@ public:
 		}
 		return false;
 	}
+	float GeometricFunc::distanceBtwPointAndLine(Vec3f p, Vec3f l1, Vec3f l2, Vec3f* pl = NULL)
+	{
+		Vec3f L = l2-l1;
+		float coff = (p-l1)*L/(L*L);
 
+		Vec3f nearestP;
+
+		if (coff < 0)
+		{
+			nearestP = l1;
+		}
+		else if(coff > 1)
+		{
+			nearestP = l2;
+		}
+		else
+		{
+			nearestP = l1+L*coff;
+		}
+
+		if (pl)
+		{
+			*pl = nearestP;
+		}
+		return (p-nearestP).norm();
+	}
 	bool isBoundCollid( Vec3f tri1[], Vec3f tri2[] ) 
 	{
 		for (int i=0; i<3; i++)
@@ -158,7 +183,14 @@ public:
 		else
 			return false;
 	}
-
+	bool GeometricFunc::isTriInBox(Vec3f& leftDown, Vec3f& rightUp, Vec3f tri[])
+	{
+		if(isPointInBox(leftDown, rightUp, tri[0])&&isPointInBox(leftDown, rightUp, tri[1])
+			&&isPointInBox(leftDown, rightUp, tri[1]))
+			return true;
+		else
+			return false;
+	}
 	bool GeometricFunc::isBoxInBox(Vec3f& leftDown, Vec3f& rightUp, Vec3f _leftDown, Vec3f _RightUp)
 	{
 		if(isPointInBox(leftDown, rightUp, _leftDown)&&isPointInBox(leftDown, rightUp, _RightUp))
