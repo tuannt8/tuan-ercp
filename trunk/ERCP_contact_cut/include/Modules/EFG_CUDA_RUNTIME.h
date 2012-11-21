@@ -20,6 +20,9 @@
 #include <cuda.h>
 #include <cutil_inline.h>
 
+#define SYNC_HOST_TO_DEVICE 0
+#define SYNC_DEVICE_TO_HOST 1
+
 #define WEIGHT_FUNC_TYPE 1
 #define DIM 3
 #define SDIM 6
@@ -101,6 +104,8 @@ public:
 	int nbNeighborNodeMax();
 	int nbNeighborNodeMin();
 	float nbNeighborNodeAve();
+
+	void synchronizeHostAndDevide(int mode);
 
 	int nbNode(){return NbNode;};
 	std::vector<Vec3f>* nodePosVec(){return NodePosVec;};

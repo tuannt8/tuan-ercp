@@ -23,7 +23,9 @@ extern "C" void d_getStressPointStress(float* stressPointStress);
 extern "C" void d_getNodeStrain(float* nodeStrain);
 extern "C" void d_getNodeStress(float* nodeStress);
 extern "C" void d_getPosition(float* pos);
+extern "C" void d_setPosition(float* pos);
 extern "C" void d_getDisplacement(float* nodeDis);
+extern "C" void d_setDisplacement(float* nodeDis);
 
 extern "C" void d_updateNbNeighborNodeFull(int* nbNeighborNode, int size);
 extern "C" void d_updateNbNeighborNodePartial(int* updatedValue, int* updatedIdx, int nbUpdated);
@@ -2205,4 +2207,18 @@ void EFG_CUDA_RUNTIME::updatePosition()
 void EFG_CUDA_RUNTIME::addDisplacement(int index, double Value)
 {		
 	NodeDis[index]+=Value;		
+}
+
+void EFG_CUDA_RUNTIME::synchronizeHostAndDevide( int mode )
+{
+	if (mode == SYNC_DEVICE_TO_HOST)
+	{
+		d_getPosition(NodePos);
+		d_setDisplacement(NodeDis);
+	}
+	else if (mode == SYNC_HOST_TO_DEVICE)
+	{
+		d_setPosition(NodePos);
+		d_setDisplacement(NodeDis);
+	}
 }

@@ -202,7 +202,7 @@ void Meshfree_GPU::updateSurfPosition()
 		}
 	}
 	SurfObj->updatePoint();
-	SurfObj->updateBVH();  //Note: Need update to new cut object
+	SurfObj->updateBVH();
 }
 
 
@@ -641,3 +641,4 @@ void Meshfree_GPU::addForceToSurfacePoint(int Index,Vec3f force)
 	}
 
 }
+
