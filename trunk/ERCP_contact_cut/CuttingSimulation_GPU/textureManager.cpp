@@ -3,12 +3,6 @@
 
 textureManager::textureManager(void)
 {
-	static bool loaded = false;
-	if (!loaded)
-	{
-		loaded = true;
-		loadAllTexture();
-	}
 }
 
 textureManager::~textureManager(void)
@@ -78,9 +72,9 @@ int textureManager::LoadGLTextures(char* path, int index)									// Load Bitmap
 void textureManager::loadAllTexture()
 {
 	LoadGLTextures("../data/textureTest.bmp", CUT_SUR_TEXTURE);
-	LoadGLTextures("../image/HardGlow2.bmp", LIGHTTING_TEXTURE);
-	LoadGLTextures("../image/Streaks4.bmp", LIGHTTING_STREAK);
-	LoadGLTextures("../image/BigGlow3.bmp", LIGHTTING_BIG_GLOW);
+// 	LoadGLTextures("../image/HardGlow2.bmp", LIGHTTING_TEXTURE);
+// 	LoadGLTextures("../image/Streaks4.bmp", LIGHTTING_STREAK);
+// 	LoadGLTextures("../image/BigGlow3.bmp", LIGHTTING_BIG_GLOW);
 	LoadGLTextures("../image/catheter.bmp", TEXTURE_CATHETER);
 }
 

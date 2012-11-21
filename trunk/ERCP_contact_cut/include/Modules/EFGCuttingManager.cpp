@@ -65,5 +65,9 @@ void EFGCuttingManager::cylinderCut( EFG_CUDA_RUNTIME* obj, std::vector<Vec3f>* 
 	collision.collisionBtwCylinderAndEdge(toolPoint, radius, efgNode, efgEdge, colEdgeIdx);
 
 	// 1-2. Remove intersected edges
-	obj->removeEdges(colEdgeIdx);	
+	if (colEdgeIdx.size()>0)
+	{
+		obj->removeEdges(colEdgeIdx);	
+	}
+
 }

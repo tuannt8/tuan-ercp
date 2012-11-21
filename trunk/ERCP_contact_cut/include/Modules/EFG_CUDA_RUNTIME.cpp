@@ -1732,7 +1732,6 @@ void EFG_CUDA_RUNTIME::removeEdgesInPhysicalModel(std::vector<int>& idx)
 		Count++;
 	}
 
-	TimeTick.SetStart();
 	int* updatedIdx=new int[updatedNeighborIdx.size()];
 	int* updatedValue=new int[updatedNeighborValue.size()];
 	for(int i=0;i<updatedNeighborIdx.size();i++)
@@ -1748,8 +1747,7 @@ void EFG_CUDA_RUNTIME::removeEdgesInPhysicalModel(std::vector<int>& idx)
 	cuCtxSynchronize();
 	delete [] updatedIdx;
 	delete [] updatedValue;
-	TimeTick.SetEnd();
-	fprintf(F,"NeighborUpdate: %f\n", TimeTick.GetTick());
+
 
 	// 2. update shape functions
 	std::vector<int> updatedShapeFuncIdx;
@@ -1775,15 +1773,13 @@ void EFG_CUDA_RUNTIME::removeEdgesInPhysicalModel(std::vector<int>& idx)
 	}
 
 	// 2-1 update gpu memory
-	TimeTick.SetStart();
 	d_updateShapeFuncDrvPartial(shapeFuncVal, shapeFuncIdx, updatedShapeFuncIdx.size()*3);
 	d_updateShapeFuncDrvInvPartial(shapeFuncValInv, shapeFuncIdx, updatedShapeFuncIdx.size()*3);
 	cuCtxSynchronize();
 	delete [] shapeFuncIdx;
 	delete [] shapeFuncVal;
 	delete [] shapeFuncValInv;
-	TimeTick.SetEnd();
-	//fprintf(F,"ShapeFuncUpdate: %f\n", TimeTick.GetTick());
+
 }
 void EFG_CUDA_RUNTIME::removeEdgesInCollisionModel(std::vector<int>& idx)
 {
@@ -2003,7 +1999,6 @@ float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 		NodePreDis[i]=NodePos[i]-NodePos0[i];
 	}
 
-
 	for(int k=0;k<itter;k++)
 	{
 
@@ -2034,6 +2029,7 @@ float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 			}
 		}
 
+
 		//Fixed Constraint
 		for(unsigned int i=0;i<FixedNodeIdx.size();i++)
 		{
@@ -2049,7 +2045,6 @@ float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 		}
 
 	}
-
 	
 	for(int i=0;i<NbNode*DIM;i++)
 	{
@@ -2155,6 +2150,7 @@ void EFG_CUDA_RUNTIME::updatePosition(double* nodeforce, double C, double dt, in
 			NodePos[i*DIM+j]=NodePos0[i*DIM+j]+NodeDis[i*DIM+j];
 		}
 	}
+
 	//Fixed Constraint
 	for(unsigned int i=0;i<FixedNodeIdx.size();i++)
 	{

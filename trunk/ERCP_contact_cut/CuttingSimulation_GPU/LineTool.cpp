@@ -24,7 +24,7 @@ void LineTool::draw( int mode )
 	if (mode == 3)
 	{
 		glPushMatrix();
-		glEnable(GL_TEXTURE_2D);
+
 		glColor3f(1,1,1);
 		Vec3f p0 = m_curPoint[0];
 		Vec3f p1 = m_curPoint[1];
@@ -40,11 +40,14 @@ void LineTool::draw( int mode )
 
 		double scal = direct.norm()/5.0;
 		glScaled(scal,scal,scal);
+
+		glEnable(GL_TEXTURE_2D);
 		textureManager::maptexture(TEXTURE_CATHETER);
 		catheter.Draw();
 		glDisable(GL_TEXTURE_2D);
-		glPopMatrix();
+
 		glScaled(1,1,1);
+		glPopMatrix();
 	}
 
 	arrayVec3f points = point();

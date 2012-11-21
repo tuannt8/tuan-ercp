@@ -77,16 +77,9 @@ void Meshfree_GPU::drawEFGObj(Vec3f color, float radius, int mode)
 
 void Meshfree_GPU::updatePositionExplicit(float dt, int itter)
 {
-	TimeTick.SetStart();
-//	EFGObj->updatePositionExplicit_CUDA(dt, itter);
-	TimeTick.SetEnd();
-	fprintf(F,"EFG: %f\n",TimeTick.GetTick());
 	EFGObj->updatePositionExplicit(dt, itter);
 
-	TimeTick.SetStart();
 	updateSurfPosition();
-	TimeTick.SetEnd();
-	fprintf(F,"Surf: %f\n", TimeTick.GetTick());
 }
 
 void Meshfree_GPU::updatePositionExplicitFree_CPU(float dt)
@@ -107,7 +100,7 @@ void Meshfree_GPU::updatePositionExplicitConst_CPU(float dt,int n)
 void Meshfree_GPU::updatePositionExplicitFree(float dt)
 {
 	EFGObj->updatePositionExplicitFree_CUDA(dt);
-	//updateSurfPosition();
+	updateSurfPosition();
 }
 
 void Meshfree_GPU::updatePositionExplicitConst(float dt)
@@ -209,7 +202,7 @@ void Meshfree_GPU::updateSurfPosition()
 		}
 	}
 	SurfObj->updatePoint();
-	SurfObj->updateBVH();
+	SurfObj->updateBVH();  //Note: Need update to new cut object
 }
 
 

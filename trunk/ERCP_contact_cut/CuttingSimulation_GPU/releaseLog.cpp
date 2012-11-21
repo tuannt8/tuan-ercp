@@ -60,3 +60,27 @@ void releaseLog::urgentLog( char* format, ... )
 
 	fclose(ff);
 }
+void releaseLog::logMatrix( float* A, int row, int col, char* fileName/*="matrix_log.txt"*/ )
+{
+	CString path;
+	path.Format("../DebugLog/%s", (char*)fileName);
+	FILE* temp = fopen(path.GetBuffer(), ("w"));
+	if (temp)
+	{
+		fprintf(temp, "Log matrix: %d x %d\n", row, col);
+		for (int i=0; i<row; i++)
+		{
+			for(int j=0; j<col; j++)
+			{
+				fprintf(temp, "%lf ", A[i*col+j]);
+			}
+			fprintf(temp, "\n");
+		}
+		fclose(temp);
+	}
+}
+
+void releaseLog::logMatrix( double* A, int row, int col, char* fileName/*="matrix_log.txt"*/ )
+{
+	logMatrix((float*)A, row, col, fileName);
+}

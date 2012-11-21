@@ -31,6 +31,15 @@ public:
 		}
 		return false;
 	};
+	bool isElementInVector(std::vector<int>* v, int value)
+	{
+		for(int i=0;i<v->size();i++)
+		{
+			if((*v)[i]==value)
+				return true;
+		}
+		return false;
+	};
 	void removeElement(std::vector<int>& v, int localIdx)
 	{
 		v[localIdx]=v[v.size()-1];

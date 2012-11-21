@@ -498,6 +498,14 @@
 			Name="Surface Topo"
 			>
 			<File
+				RelativePath=".\meanValueCoord.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\meanValueCoord.h"
+				>
+			</File>
+			<File
 				RelativePath="..\include\Graphics\SurfaceObj.cpp"
 				>
 			</File>
