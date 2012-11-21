@@ -143,6 +143,7 @@ public:
 	
 	afx_msg void OnUpdateDebug();
 	void drawDebug();
+	void DrawText();
 };
 
 #ifndef _DEBUG  // debug version in CuttingSimulation_GPUView.cpp

@@ -306,13 +306,13 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	{
 		if (bCollisionMode)
 		{
-
-
 			arrayVec3f* toolPoint = m_lineTool.frontPoint();
 			Vec3f P1 = (*toolPoint)[0];
 			Vec3f P2 = (*toolPoint)[1];		
 			Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
 			Response.ComputeforcefromComplianceV10(dt/n,n,&m_Meshfree,&m_Collision);
+
+			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_HOST_TO_DEVICE);
 		}
 		else
 		{
@@ -335,7 +335,12 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
 				mesh.updateShapeFunc(&m_Meshfree, newPt);
 			}
-			m_Meshfree.updatePositionExplicitFree(0.003);
+			for (int i=0; i<5; i++)
+			{
+				m_Meshfree.updatePositionExplicitFree(0.01);
+			}
+
+			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_DEVICE_TO_HOST);
 		}
 	}
 
@@ -360,7 +365,41 @@ void CCuttingSimulation_GPUView::InitGL()
 // 	glUniform3f(glGetUniformLocation(m_ShaderProg, "LightPosition"), 1000.0, 1000.0, 1000.0);
 	textureManager::loadAllTexture();
 }
+void CCuttingSimulation_GPUView::DrawText()
+{
+	CString text;
+	if (!START)
+		text.Format("Static");
+	else
+	{
+		if (bCollisionMode)
+			text.Format("Collision mode");
+		else
+		{
+			if (bCut)
+				text.Format("Deform mode-Cut");
+			else
+				text.Format("Free deform mode");
+		}
+	}
 
+
+	glPushMatrix();
+	glTranslatef(m_Cam.m_Center[0], m_Cam.m_Center[1],m_Cam.m_Center[2]);
+
+	float textPosX = 0.45*(m_WindowWidth/m_WindowHeight)*m_Cam.m_Distance/1.4;
+	float textPosY = 0.5*m_Cam.m_Distance/1.4;
+
+	float textPosZ = 0.0*m_Cam.m_Distance;
+	Vec3d textPos = Vec3d(textPosX,textPosY,textPosZ);
+
+	Mat3x3f rotateM = m_Cam.m_RotMatrix;
+	textPos = rotateM*(textPos);
+	glColor3f(1.0,0.7,0.4);
+	Utility::printw(textPos[0], textPos[1], textPos[2], text.GetBuffer());
+
+	glPopMatrix();
+}
 void CCuttingSimulation_GPUView::DrawView()  
 {
 	GLUquadricObj *qobj = 0;
@@ -374,7 +413,7 @@ void CCuttingSimulation_GPUView::DrawView()
 
 	m_lineTool.draw(2);
 
-
+	DrawText();
 	drawDebug();
 
 	if (m_displayMode[1])

@@ -469,10 +469,21 @@ extern "C" void d_getPosition(float* nodePos)
 	cutilSafeCall(cudaMemcpy(nodePos, d_NodePos, size, cudaMemcpyDeviceToHost));
 }
 
+extern "C" void d_setPosition(float* nodePos)
+{
+	int size=d_NbNode*DIM*sizeof(float);
+	cutilSafeCall(cudaMemcpy(d_NodePos, nodePos, size, cudaMemcpyHostToDevice));
+}
+
 extern "C" void d_getDisplacement(float* nodeDis)
 {
 	int size=d_NbNode*DIM*sizeof(float);
 	cutilSafeCall(cudaMemcpy(nodeDis, d_NodeDis, size, cudaMemcpyDeviceToHost));
+}
+extern "C" void d_setDisplacement(float* nodeDis)
+{
+	int size=d_NbNode*DIM*sizeof(float);
+	cutilSafeCall(cudaMemcpy(d_NodeDis, nodeDis, size, cudaMemcpyHostToDevice));
 }
 
 extern "C" void d_getMass(float* nodeMass)
