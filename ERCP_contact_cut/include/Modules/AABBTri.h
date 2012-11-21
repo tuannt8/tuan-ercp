@@ -25,6 +25,9 @@ public:
 	//AABB tree construction
 	virtual void constructAABBTree();
 	virtual void constructAABBTree(std::vector<int>& faceIdx);
+	virtual AABBNode* findLeafNode(int triIdx);
+
+	void findLeafNode(AABBNode* _root, Vec3f* tri, std::vector<AABBNode*>* nodes);
 
 	//AABB tree update bottom up
 	virtual void updateAABBTreeBottomUp();

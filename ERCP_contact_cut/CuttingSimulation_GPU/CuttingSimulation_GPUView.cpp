@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include <stdio.h>
 #include "CuttingSimulation_GPU.h"
+#include "MainFrm.h"
 
 #include "CuttingSimulation_GPUDoc.h"
 #include "CuttingSimulation_GPUView.h"
@@ -36,6 +37,7 @@ BEGIN_MESSAGE_MAP(CCuttingSimulation_GPUView, CView)
 	ON_WM_MOUSEWHEEL()
 	ON_WM_SIZE()
 	ON_WM_TIMER()
+	ON_COMMAND(ID_BUTTON_UPDDATE, &CCuttingSimulation_GPUView::OnUpdateDebug)
 END_MESSAGE_MAP()
 
 // CCuttingSimulation_GPUView construction/destruction
@@ -304,6 +306,8 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	{
 		if (bCollisionMode)
 		{
+
+
 			arrayVec3f* toolPoint = m_lineTool.frontPoint();
 			Vec3f P1 = (*toolPoint)[0];
 			Vec3f P2 = (*toolPoint)[1];		
@@ -314,6 +318,8 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 		{
 			if (bCut)
 			{
+				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+
 				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
 
 				simpleRemesh mesh;
@@ -331,7 +337,6 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 			}
 			m_Meshfree.updatePositionExplicitFree(0.003);
 		}
-	
 	}
 
 	InvalidateRect(NULL, FALSE);
@@ -369,17 +374,22 @@ void CCuttingSimulation_GPUView::DrawView()
 
 	m_lineTool.draw(2);
 
-	if (!m_displayMode[6])
-		m_Meshfree.drawEFGObj(Vec3f(1,0,0),2,0);
 
+	drawDebug();
 
 	if (m_displayMode[1])
-		m_Meshfree.drawSurfObj(Vec3f(1,0.2,0.2),1);
+		m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
 	if (m_displayMode[2])
 		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
 
+	if (!m_displayMode[4])
+		m_Meshfree.surfObj()->drawBVH();
+
 	if (!m_displayMode[5])
 		m_Meshfree.efgObj()->drawEdge();
+
+	if (!m_displayMode[6])
+		m_Meshfree.drawEFGObj(Vec3f(1,0,0),2,0);
 
 	if (!m_displayMode[9])
 		m_Collision.drawCollisionInfo(Vec3d(0,1,0));
@@ -530,9 +540,7 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
-// 	m_Surf.readObjData("../data/papilla_highRes.txt");
-// 	m_Surf.constructAABBTree();
-	m_Meshfree.loadSurfObj("../data/testObj.txt");
+	m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
 	m_Meshfree.generateEFGObj(10, false);
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
@@ -545,8 +553,8 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 // 	m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
 // 	//	m_Meshfree.loadSurfObj("../data/cube_hole_convex.txt");
 
-		m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
-	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(-100,0,-200));
+	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
+	m_lineTool.init(Vec3f(200,0,-200), Vec3f(-100,0,-200));
 }
 
 void CCuttingSimulation_GPUView::textureTest()
@@ -673,3 +681,43 @@ void CCuttingSimulation_GPUView::textureTest()
 	}
 }
 
+
+void CCuttingSimulation_GPUView::OnUpdateDebug()
+{
+	CMainFrame* mainFrm = (CMainFrame*)AfxGetMainWnd();
+
+	mode = mainFrm->m_comboBox.GetCurSel();
+
+	CString text;
+	mainFrm->m_editBox.GetWindowText(text);
+	index =  atoi( (LPCTSTR) text );
+}
+
+void CCuttingSimulation_GPUView::drawDebug()
+{
+	if (index == -1)
+	{
+		return;
+	}
+
+	switch(mode)
+	{
+	case 0: // BVH bounding surface triangle
+		{
+			AABBNode* node = m_Meshfree.surfObj()->getBVH()->findLeafNode(index);
+			m_Meshfree.surfObj()->getBVH()->drawBoundingBoxLeafNode(node);
+
+			m_Meshfree.surfObj()->drawFace(index);
+			break;
+		}
+	case 1: // BVH bounding EFG edge
+		{
+			AABBNode* node = m_Meshfree.efgObj()->getBVH()->findLeafNode(index);
+			m_Meshfree.efgObj()->getBVH()->drawBoundingBoxLeafNode(node);
+
+			m_Meshfree.efgObj()->drawEdge(index);
+			break;
+		}
+
+	}
+}

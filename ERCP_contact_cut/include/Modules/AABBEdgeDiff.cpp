@@ -311,7 +311,24 @@ AABBNode* AABBTreeEdgeDiff::findLeafNode(int edgeIdx)
 		return NULL;
 	else
 		return node[0];
+
+// 	std::vector<AABBNode*> nodes;
+// 	Vec3f edge[2]; 
+// 	edge[0]=(*Point)[(*Edge)[edgeIdx][0]];
+// 	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
+// 
+// 	findLeafNode(Root, edgeIdx, nodes);
+// 
+// 	for(int i=0; i<nodes.size(); i++)
+// 	{
+// 		if (nodes[i]->IndexInLeafNode == edgeIdx)
+// 		{
+// 			return nodes[i];
+// 		}
+// 	}
+// 	return NULL;
 }
+
 
 void AABBTreeEdgeDiff::findLeafNode(AABBNode* root, int edgeIdx, std::vector<AABBNode*>& node)
 {
@@ -325,11 +342,7 @@ void AABBTreeEdgeDiff::findLeafNode(AABBNode* root, int edgeIdx, std::vector<AAB
 		{
 			if(root->End)
 			{
-				if(root->IndexInLeafNode==edgeIdx)
-				{
-					node.push_back(root);
-					return;
-				}
+				node.push_back(root);
 			}
 			else
 			{

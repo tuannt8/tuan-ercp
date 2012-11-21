@@ -1446,7 +1446,7 @@ void EFG_CUDA_RUNTIME::updatePositionExplicitFree_CUDA(float dt)
 		for(int j=0;j<3;j++)
 			(*NodePosVec)[i][j]=NodePos[i*3+j];
 	}
-	//BVHAABB.updateAABBTreeBottomUp();
+//	BVHAABB.updateAABBTreeBottomUp(); // Cost too much time here
 }
 
 void EFG_CUDA_RUNTIME::updatePositionExplicitConst_CUDA(float dt)

@@ -122,6 +122,9 @@ protected:
 
 	textureManager texManager;
 
+	int index;
+	int mode;
+
 	void textureTest();
 // Generated message map functions
 protected:
@@ -138,6 +141,8 @@ public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	
+	afx_msg void OnUpdateDebug();
+	void drawDebug();
 };
 
 #ifndef _DEBUG  // debug version in CuttingSimulation_GPUView.cpp

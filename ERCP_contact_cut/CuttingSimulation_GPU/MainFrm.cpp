@@ -62,6 +62,47 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	// TODO: Delete these three lines if you don't want the toolbar to be dockable
+
+	{
+		CRect rect;
+
+		int nIndex = m_wndToolBar.GetToolBarCtrl().CommandToIndex(ID_COMBO);
+		m_wndToolBar.SetButtonInfo(nIndex, ID_COMBO, TBBS_SEPARATOR, 205);
+		m_wndToolBar.GetToolBarCtrl().GetItemRect(nIndex, &rect);
+		rect.top = 1;
+		rect.bottom = rect.top + 250 /*drop height*/;
+
+		if(!m_comboBox.Create(CBS_DROPDOWNLIST | CBS_SORT | WS_VISIBLE |
+			WS_TABSTOP | WS_VSCROLL, rect, &m_wndToolBar, ID_COMBO))
+		{
+			TRACE(_T("Failed to create combo-box\n"));
+			return FALSE;
+		}
+
+
+		m_comboBox.AddString("1. Surface Tri bounding box");
+		m_comboBox.AddString("2. EFG edge bounding box");
+
+		m_comboBox.SetCurSel(0);
+	}
+	{
+		CRect rect;
+
+		int nIndex = m_wndToolBar.GetToolBarCtrl().CommandToIndex(ID_TEXT_BOX);
+		m_wndToolBar.SetButtonInfo(nIndex, ID_TEXT_BOX, TBBS_SEPARATOR, 50);
+		m_wndToolBar.GetToolBarCtrl().GetItemRect(nIndex, &rect);
+		rect.top = 1;
+		rect.bottom = rect.top + 250 /*drop height*/;
+
+		if (!m_editBox.Create(ES_MULTILINE | WS_CHILD | WS_VISIBLE | WS_TABSTOP | WS_BORDER,
+			rect, &m_wndToolBar, ID_TEXT_BOX))
+		{
+			TRACE(_T("Failed to create combo-box\n"));
+			return FALSE;
+		}
+		m_editBox.SetWindowText(_T("-1"));
+	}
+
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);

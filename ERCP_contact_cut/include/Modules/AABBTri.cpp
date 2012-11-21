@@ -283,3 +283,41 @@ void AABBTreeTri::updateBoundingBoxBottomUp(AABBNode* root)
 		root->Updated=true;
 	}
 }
+
+AABBNode* AABBTreeTri::findLeafNode( int triIdx )
+{
+	Vec3f tri[3];
+	tri[0] = Point->at(Face->at(triIdx)[0]);
+	tri[1] = Point->at(Face->at(triIdx)[1]);
+	tri[2] = Point->at(Face->at(triIdx)[2]);
+
+	std::vector<AABBNode*> potentialNode;
+	findLeafNode(Root, tri, &potentialNode);
+
+	for (int i=0; i<potentialNode.size(); i++)
+	{
+		if (potentialNode[i]->IndexInLeafNode == triIdx)
+		{
+			return potentialNode[i];
+		}
+	}
+	return NULL;
+}
+
+void AABBTreeTri::findLeafNode( AABBNode* _root, Vec3f* tri, std::vector<AABBNode*>* nodes )
+{
+	GeometricFunc func;
+	if (func.isTriInBox(_root->LeftDown, _root->RightUp, tri))
+	{
+		if (_root->End)
+		{
+			nodes->push_back(_root);
+		}
+		else
+		{
+			findLeafNode(_root->Left, tri, nodes);
+			findLeafNode(_root->Right, tri, nodes);
+		}
+	}
+	return;
+}

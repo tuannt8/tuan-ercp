@@ -1,5 +1,10 @@
 #include "stdafx.h"
 #include "AABB.h"
+#include "geometricfunc.h"
+
+#define copy_box(box, aabb) box.leftDown = aabb->LeftDown; \
+	box.rightUp = aabb->RightUp; \
+	box.center = (aabb->LeftDown+aabb->RightUp)/2
 
 AABBNode::AABBNode(void)
 {
@@ -120,6 +125,9 @@ void AABBTree::updateAABBTreeBottomUp()
 
 void AABBTree::removeNode(AABBNode* node)
 {
+	if (!node)
+		return;
+
 	AABBNode* parent=node->Parent;
 	AABBNode* grandParent=parent->Parent;
 	if(parent->Left==node)
@@ -192,6 +200,68 @@ void AABBTree::removeNode(AABBNode* node)
 
 void AABBTree::addNode(AABBNode* node)
 {
+	addNode(Root, node);	
+}
+
+void AABBTree::addNode( AABBNode* _root, AABBNode* newNode )
+{
+	bool eneded = _root->End;
+	if (_root->End == true)
+	{
+		AABBNode* newChildNode=new AABBNode;
+		_root->copy(newChildNode);
+		
+		newChildNode->End = true;
+		newChildNode->Depth = _root->Depth+1;
+		newChildNode->Parent = _root;
+		newNode->End = true;
+		newNode->Depth = _root->Depth+1;
+		newNode->Parent = _root;
+		
+		_root->End = false;
+		_root->Left = newChildNode;
+		_root->Right = newNode;
+
+		for (int i=0; i<3; i++)
+		{
+			if (_root->LeftDown[i] > newNode->LeftDown[i])
+			{
+				_root->LeftDown[i] = newNode->LeftDown[i];
+			}
+			if (_root->RightUp[i] < newNode->RightUp[i])
+			{
+				_root->RightUp[i] = newNode->RightUp[i];
+			}
+		}
+	}
+	else
+	{
+		GeometricFunc funcs;
+
+		AABBNode* _left = _root->Left;
+		AABBNode* _right = _root->Right;
+
+		if (!_left)
+			addNode(_right, newNode);
+		else if (!_right)
+			addNode(_left, newNode);
+		else
+		{
+			Box leftBox, righBox, newBox;
+			copy_box(leftBox, _left);
+			copy_box(righBox, _right);
+			copy_box(newBox, newNode);
+
+			float leftDis = funcs.disBtwBox(leftBox, newBox);
+			float rightDis = funcs.disBtwBox(righBox, newBox);
+			if (leftDis < rightDis)
+			{
+				addNode(_left, newNode);
+			}
+			else
+				addNode(_right, newNode);
+		}
+	}
 }
 
 AABBNode* AABBTree::findLeafNode(int idx)

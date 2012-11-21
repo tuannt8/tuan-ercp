@@ -58,16 +58,21 @@ void EFGCuttingManager::cylinderCut( EFG_CUDA_RUNTIME* obj, std::vector<Vec3f>* 
 
 	std::vector<Vec3f>* efgNode=obj->nodePosVec();
 	std::vector<Vec2i>* efgEdge=obj->edge();
-	AABBTreeEdge* edfBVH=obj->getBVH();
+	AABBTreeEdge* efgBVH=obj->getBVH();
 
 	std::vector<int> colEdgeIdx;
 
-	collision.collisionBtwCylinderAndEdge(toolPoint, radius, efgNode, efgEdge, colEdgeIdx);
+//	arrayInt test;
+//	collision.collisionBtwCylinderAndEdge(toolPoint, radius, efgNode, efgEdge, test);
+	collision.collisionBtwCylinderAndEdgeWithBVH(toolPoint, radius, efgNode, efgEdge, efgBVH, colEdgeIdx);
 
 	// 1-2. Remove intersected edges
 	if (colEdgeIdx.size()>0)
 	{
-		obj->removeEdges(colEdgeIdx);	
+		obj->removeEdges(colEdgeIdx);
+
+// 		releaseLog::logVectorInt(test, "realInt.txt");
+// 		releaseLog::logVectorInt(colEdgeIdx, "WithBVH.txt");
 	}
 
 }

@@ -303,20 +303,33 @@ AABBNode* AABBTreeEdge::findLeafNode(int edgeIdx)
 		return iter->second;
 	else
 		return NULL;*/
-	std::vector<AABBNode*> node;
-	Vec3f edge[2]; 
-	edge[0]=(*Node)[(*Edge)[edgeIdx][0]];
-	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
-	GeometricFunc func;
-	if(func.isLineInBox(Root->LeftDown, Root->RightUp, edge))
+
+// 	std::vector<AABBNode*> node;
+// 	Vec3f edge[2]; 
+// 	edge[0]=(*Node)[(*Edge)[edgeIdx][0]];
+// 	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
+// 	GeometricFunc func;
+// 	if(func.isLineInBox(Root->LeftDown, Root->RightUp, edge))
+// 	{
+// 		findLeafNode(Root->Left, edgeIdx, node);
+// 		findLeafNode(Root->Right, edgeIdx, node);
+// 	}
+// 	if(node.size()==0)
+// 		return NULL;
+// 	else
+// 		return node[0];
+
+	std::vector<AABBNode*> nodes;
+	findLeafNode(Root, edgeIdx, nodes);
+
+	for(int i=0; i<nodes.size(); i++)
 	{
-		findLeafNode(Root->Left, edgeIdx, node);
-		findLeafNode(Root->Right, edgeIdx, node);
+		if (nodes[i]->IndexInLeafNode == edgeIdx)
+		{
+			return nodes[i];
+		}
 	}
-	if(node.size()==0)
-		return NULL;
-	else
-		return node[0];
+	return NULL;
 }
 
 void AABBTreeEdge::findLeafNode(AABBNode* root, int edgeIdx, std::vector<AABBNode*>& node)

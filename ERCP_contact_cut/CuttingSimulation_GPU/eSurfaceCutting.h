@@ -41,6 +41,11 @@ public: // But must be private
 
 	void collisionBtwCyliderAndTri( arrayVec3f* surfPoints, arrayVec3i* surfFaces, 
 				arrayVec3f * toolPoint, float toolRadius, arrayInt &collideIdxs );
+	void collisionBtwCyliderAndTriWithBVH( arrayVec3f* surfPoints, arrayVec3i* surfFaces, AABBTree* surfBVH,
+		arrayVec3f * toolPoint, float toolRadius, arrayInt &collideIdxs );
+	void traverseBVHPQ_line( AABBNode* root, std::vector<int>& collidedTris, std::vector<Vec3f>* toolPoints, float radius );
+
+
 	void independendArea( arrayInt IdxOfCollideTri, std::vector<arrayInt>& triAreas );
 	void addNeighborTri(arrayInt* allTri, arrayInt* areaTri, int triIdx);
 	bool findBoundaryLoop(TopologyContainer* surfTopo, arrayInt idxOfRemoveTri,  std::vector<arrayInt>& boundLoops);
