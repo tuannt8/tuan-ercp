@@ -271,10 +271,34 @@ extern "C" void d_initGPU(int nbNode, int nbNodeAdded, float* nodeVolume, float*
 
 	cutilSafeCall(cudaMalloc((void**) &d_NodeDis, size));
 	cutilSafeCall(cudaMalloc((void**) &d_NodeForce, size));
+	// zero default value for nodeDis, nodeForce, nodeStrain and nodeStress
+	{
+		float* temp0 = (float*)malloc(size);
+		int i=0;
+		for(i=0; i<nbNode*DIM; i++)
+		{
+			temp0[i] = 0;
+		}
+		cutilSafeCall(cudaMemcpy(d_NodeDis, temp0, size, cudaMemcpyHostToDevice) );
+		cutilSafeCall(cudaMemcpy(d_NodeForce, temp0, size, cudaMemcpyHostToDevice) );
+		free(temp0);
+	}
 
 	size=nbNode*SDIM*sizeof(float);
 	cutilSafeCall(cudaMalloc((void**) &d_NodeStrain, size));
 	cutilSafeCall(cudaMalloc((void**) &d_NodeStress, size));
+		// zero default value for nodeDis, nodeForce, nodeStrain and nodeStress
+	{
+		float* temp0 = (float*)malloc(size);
+		int i=0;
+		for(i=0; i<nbNode*SDIM; i++)
+		{
+			temp0[i] = 0;
+		}
+		cutilSafeCall(cudaMemcpy(d_NodeStrain, temp0, size, cudaMemcpyHostToDevice) );
+		cutilSafeCall(cudaMemcpy(d_NodeStress, temp0, size, cudaMemcpyHostToDevice) );
+		free(temp0);
+	}
 }
 
 extern "C" void d_initStressPoint(int nbStress, float* stressVolume, float* stressPos0, float* stressPos)
@@ -373,8 +397,11 @@ extern "C" void d_explicitIntegration(float dt, int nbFixedConstraint)
 
 	explicitIntegration_k<<< blocksPerGrid, threadsPerBlock >>> (d_NodeDis, d_NodePos, d_NodePos0, d_NodeVel, d_NodeForce, d_NodeMass, d_FixedConstraint, nbFixedConstraint, dt);
 
-	blocksPerGrid.x = nbFixedConstraint;
-	fixedConstraint_k<<< blocksPerGrid, threadsPerBlock >>> (d_NodeDis, d_NodePos, d_NodePos0, d_FixedConstraint);
+	if(nbFixedConstraint > 0)
+	{
+		blocksPerGrid.x = nbFixedConstraint;
+		fixedConstraint_k<<< blocksPerGrid, threadsPerBlock >>> (d_NodeDis, d_NodePos, d_NodePos0, d_FixedConstraint);
+	}
 }
 
 extern "C" void d_explicitIntegrationConst(float dt)

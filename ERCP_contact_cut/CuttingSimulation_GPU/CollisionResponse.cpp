@@ -1162,26 +1162,9 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 		delete [] mapping;
 		mapping=NULL;
 
-
 		penetration-=m1*(InternalDis);
-		/*int nb=0;
-		for(int i=0;i<nbCollide;i++)
-		{
-			if(penetration(i)<0)
-			{
-				penetration(nb)=penetration(i);
-				nb+=1;
-			}
-		}
-		nbCollide=nb;
-		penetration.resize(nbCollide);*/
-
-
-		//	penetration.print("pene2.txt");
 
 		//Construct MCM
-
-
 		mcm=(m1*trans(m1))*C;
 
 		//Gauss Seidel 
@@ -1195,8 +1178,6 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 	InternalForce=new double[3*Nb1];
 
 	Vec3d transferdForce(0,0,100);
-
-	//g_PhanTomCtr.setForce(transferdForce);
 	
 
 	for(int i=0;i<3*Nb1;i++)

@@ -395,12 +395,12 @@ void MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec
 	eSurfaceCutting surCutting;
 
 	surCutting.cutting(obj->surfObj(), toolPoint_in);
-	surCutting.stepDebug();
+//	surCutting.stepDebug();
 
 	//UPdate internal nodes
-	efgCuttingManager.cylinderCut(obj->efgObj(), toolPoint, toolRadius);
-	//Update surface nodes
-	updateConnectionCylinder();
+//	efgCuttingManager.cylinderCut(obj->efgObj(), toolPoint, toolRadius);
+// 	//Update surface nodes
+// 	updateConnectionCylinder();
 }
 
 void MeshfreeCuttingManager::updateConnectionCylinder()

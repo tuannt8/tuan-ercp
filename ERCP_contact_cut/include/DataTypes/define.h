@@ -21,7 +21,7 @@
 
 #define E		1000
 #define NU		0.3
-#define DENSITY	0.001
+#define DENSITY	0.02 //0.02 for majorpapilla; 0.001 for liver
 #define DAMPING	1000
 
 #define TOOL_RADIUS 3

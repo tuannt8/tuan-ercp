@@ -7,6 +7,11 @@
 
 #include "CuttingSimulation_GPUDoc.h"
 #include "CuttingSimulation_GPUView.h"
+#include "simpleRemesh.h"
+#include "eSurfaceCutting.h"
+#include "meanValueCoord.h"
+#include "textureManager.h"
+#include "stl.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -124,17 +129,25 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	TOOL_START=false;
 	SWITCH=true;
 	Collision=false;
+	bCollisionMode = FALSE;
 	m_ToolPathIdx=0;
+	bCut = FALSE;
+	bRemesh = FALSE;
+	bSmoothBoundary = FALSE;
+	bInitTexCoord = FALSE;
 	SetTimer(1,20,NULL);
 	InitGL();
 
 	int res=15;
-	LiverInit(res);
+	//LiverInit(res);
+	//SphereInit(res);
+
+	majorPapillaInit();
 
 	//m_Meshfree.makeMappingMatrix();
 	m_tool.init(Vec3f(100,150,200),Vec3f(0,350,200),10);
 
-	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
+//	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 }
 
 void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -148,34 +161,48 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 
 	if(lsChar=='Q')
 	{
-		if(START)
-			START=false;
-		else
-			START=true;
+		START = !START;
 	}
 	else if(lsChar=='W')
 	{
-		m_tool.move(0,3*var,0);
+		bCollisionMode = !bCollisionMode;
 	}
-	else if(lsChar=='S')
+	else if(lsChar=='C')
 	{
-		m_tool.move(0,-var,0);
+		bCut = TRUE;
 	}
 	else if(lsChar=='R')
 	{
-		m_tool.move(0,0,var);
+		bRemesh = TRUE;
 	}
-	else if(lsChar=='F')
+	else if(lsChar=='X')
 	{
-		m_tool.move(0,0,-var);
+		bCut = FALSE;
 	}
-	else if(lsChar=='A')
+	else if(lsChar=='V')
 	{
-		m_tool.move(-var,0,0);
+		bSmoothBoundary = TRUE;
 	}
-	else if(lsChar=='D')
+	else if(lsChar=='Z')
 	{
-		m_tool.move(var,0,0);
+		bInitTexCoord = TRUE;
+	}
+	else if (lsChar == 'G')
+	{
+		char* source = ("C:\\Users\\tuan\\Desktop\\testObj.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\testObj.txt");
+
+		CSTL surObj;
+		surObj.ReadData(source);
+		surObj.WriteToObj(des);
+	}
+	else if(lsChar=='O')
+	{
+		m_lineTool.moveCurrentPoint(Vec3f(speed,0,0));
+	}
+	else if(lsChar=='P')
+	{
+		m_lineTool.moveCurrentPoint(Vec3f(-speed,0,0));
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
@@ -271,14 +298,40 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	float dt=0.03;
 	int n=10;
 
+
+
 	if(START)
 	{
-		arrayVec3f* toolPoint = m_lineTool.frontPoint();
-		Vec3f P1 = (*toolPoint)[0];
-		Vec3f P2 = (*toolPoint)[1];		
+		if (bCollisionMode)
+		{
+			arrayVec3f* toolPoint = m_lineTool.frontPoint();
+			Vec3f P1 = (*toolPoint)[0];
+			Vec3f P2 = (*toolPoint)[1];		
+			Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
+			Response.ComputeforcefromComplianceV10(dt/n,n,&m_Meshfree,&m_Collision);
+		}
+		else
+		{
+			if (bCut)
+			{
+				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
 
-		Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
-		Response.ComputeforcefromComplianceV10(dt/n,n,&m_Meshfree,&m_Collision);	
+				simpleRemesh mesh;
+				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
+			}
+			if (bRemesh)
+			{
+				bRemesh = false;
+
+				simpleRemesh mesh;
+				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 20);
+				arrayInt newPt = mesh.newPointIdx;
+				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
+				mesh.updateShapeFunc(&m_Meshfree, newPt);
+			}
+			m_Meshfree.updatePositionExplicitFree(0.003);
+		}
+	
 	}
 
 	InvalidateRect(NULL, FALSE);
@@ -297,9 +350,10 @@ void CCuttingSimulation_GPUView::InitGL()
 	m_hDC=Initgl.m_hDC;
 	m_hRC=Initgl.m_hRC;
 
-	Initgl.SetupShader("../shader/local");
-	m_ShaderProg=Initgl.GetProgLog();
-	glUniform3f(glGetUniformLocation(m_ShaderProg, "LightPosition"), 1000.0, 1000.0, 1000.0);
+// 	Initgl.SetupShader("../shader/local");
+// 	m_ShaderProg=Initgl.GetProgLog();
+// 	glUniform3f(glGetUniformLocation(m_ShaderProg, "LightPosition"), 1000.0, 1000.0, 1000.0);
+	textureManager::loadAllTexture();
 }
 
 void CCuttingSimulation_GPUView::DrawView()  
@@ -311,6 +365,7 @@ void CCuttingSimulation_GPUView::DrawView()
 	SetupView();
 	UpdateView();
 
+	textureTest();
 
 	m_lineTool.draw(2);
 
@@ -321,14 +376,16 @@ void CCuttingSimulation_GPUView::DrawView()
 	if (m_displayMode[1])
 		m_Meshfree.drawSurfObj(Vec3f(1,0.2,0.2),1);
 	if (m_displayMode[2])
-		m_Meshfree.drawSurfObj(Vec3f(1,0.8,0.47),0);
+		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
 
 	if (!m_displayMode[5])
-		m_Meshfree.surfObj()->drawBVH();
+		m_Meshfree.efgObj()->drawEdge();
 
 	if (!m_displayMode[9])
 		m_Collision.drawCollisionInfo(Vec3d(0,1,0));
 
+	if (!m_displayMode[8])
+		m_lineTool.draw(3);
 
 	glPopMatrix();
 	glPopAttrib();
@@ -336,12 +393,14 @@ void CCuttingSimulation_GPUView::DrawView()
 
 void CCuttingSimulation_GPUView::SetupView()
 {
+	glClearColor(1.0f, 1.0f, 1.0f, 0.5f);
+
 	GLfloat diffuseLight[] = {0.4f,0.4f,0.4f,1.0f};
 	GLfloat ambientLight[] = {0.8f,0.8f,0.8f,1.0f};
 	GLfloat specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
 	glEnable(GL_DEPTH_TEST);                                        
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
 	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//	glEnable(GL_BLEND);
 
@@ -353,8 +412,8 @@ void CCuttingSimulation_GPUView::SetupView()
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glEnable(GL_LIGHT0);
 
-	glFrontFace(GL_CCW);
-	//glFrontFace(GL_CW);
+	//glFrontFace(GL_CCW);
+	glFrontFace(GL_CW);
 	glShadeModel(GL_SMOOTH); 
 	glPolygonMode(GL_FRONT, GL_FILL);
 }
@@ -378,6 +437,8 @@ void CCuttingSimulation_GPUView::UpdateView()
 
 void CCuttingSimulation_GPUView::LiverInit(int res)
 {
+	//papilla_highRes
+	//liver2194
 	m_Surf.readObjData("../data/liver2194.txt");
 	m_Surf.constructAABBTree();
 	m_Meshfree.loadSurfObj("../data/liver2194.txt");
@@ -386,6 +447,8 @@ void CCuttingSimulation_GPUView::LiverInit(int res)
 	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
 	m_Meshfree.initFixedConstraintGPU();
 	m_Tool.initEx2();
+
+	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 }
 
 void CCuttingSimulation_GPUView::ManInit(int res)
@@ -430,11 +493,13 @@ void CCuttingSimulation_GPUView::CylinderInit(int res)
 
 void CCuttingSimulation_GPUView::SphereInit(int res)
 {
-	m_Meshfree.loadSurfObj("../data/Sphere482.txt");
+	m_Meshfree.loadSurfObj("../data/sphere.txt");
 	m_Meshfree.generateEFGObj(res, true);
 	m_Meshfree.boxConstraint(Vec3f(-300, -300, -300), Vec3f(-30, 300, 300));
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.initFixedConstraintGPU();
+
+	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 }
 
 void CCuttingSimulation_GPUView::TubeInit(int res)
@@ -462,4 +527,149 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 }
 
 #pragma "New Function for cutting"
+
+void CCuttingSimulation_GPUView::majorPapillaInit()
+{
+// 	m_Surf.readObjData("../data/papilla_highRes.txt");
+// 	m_Surf.constructAABBTree();
+	m_Meshfree.loadSurfObj("../data/testObj.txt");
+	m_Meshfree.generateEFGObj(10, false);
+	m_Meshfree.connectSurfAndEFG();
+	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
+	m_Meshfree.initFixedConstraintGPU();
+
+// 	//	m_Meshfree.loadSurfObj("../data/mp_super_high.txt");
+// 	//	m_Meshfree.loadSurfObj("../data/papilla_hr_1.txt");
+// 	//	m_Meshfree.loadSurfObj("../data/mp2_h.txt");
+// 	//	m_Meshfree.loadSurfObj("../data/mp_hr2.txt");
+// 	m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
+// 	//	m_Meshfree.loadSurfObj("../data/cube_hole_convex.txt");
+
+		m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
+	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(-100,0,-200));
+}
+
+void CCuttingSimulation_GPUView::textureTest()
+{
+	static arrayVec2f uvPoint;
+	static arrayVec3i uvTri;
+
+	if (bSmoothBoundary)  
+	{
+		//Smooth boundary
+		bSmoothBoundary = false;
+		arrayVec3f* points = m_Meshfree.surfObj()->point();
+		arrayVec3f* point0 = m_Meshfree.surfObj()->point0();
+		arrayVec3i* face = m_Meshfree.surfObj()->face();
+
+		arrayInt triArea = eSurfaceCutting::cutFaceIdx;
+		eSurfaceCutting surfC;
+		VectorFunc func;
+		std::vector<arrayInt> allLoops;
+		surfC.findBoundaryLoop(m_Meshfree.surfObj()->container(), triArea, allLoops);
+		arrayInt loops = allLoops[0];
+
+		int nbPoint = loops.size();
+		arrayVec3f newPs;
+		arrayVec3f newPs0;
+		for (int i=0; i<loops.size(); i++)
+		{
+			Vec3f pt = (points->at(loops[(i-1+nbPoint)%nbPoint])+points->at(loops[i])+
+				points->at(loops[(i+1)%nbPoint]))/3;
+			Vec3f pt0 = (point0->at(loops[(i-1+nbPoint)%nbPoint])+point0->at(loops[i])+
+				point0->at(loops[(i+1)%nbPoint]))/3;
+			newPs.push_back(pt);
+			newPs0.push_back(pt0);
+		}
+		for (int i=0; i<loops.size(); i++)
+		{
+			points->at(loops[i])=newPs[i];
+			point0->at(loops[i])=newPs0[i];
+		}
+	}
+
+	if (bInitTexCoord)
+	{
+		bInitTexCoord = false;
+		arrayVec3f* points = m_Meshfree.surfObj()->point();
+		arrayVec3f* point0 = m_Meshfree.surfObj()->point0();
+		arrayVec3i* face = m_Meshfree.surfObj()->face();
+
+		arrayInt triArea = eSurfaceCutting::cutFaceIdx;
+		eSurfaceCutting surfC;
+		VectorFunc func;
+
+		meanValueCoord meanCoord;
+
+		arrayVec3f pointArea;
+		arrayVec3i faceArea;
+
+		for (int i=0; i<triArea.size(); i++)
+		{
+			faceArea.push_back(face->at(triArea[i]));
+		}
+
+		arrayInt allPtIdx;
+		for (int i=0; i<triArea.size(); i++)
+		{
+			for (int j=0; j<3; j++)
+			{
+				allPtIdx.push_back(face->at(triArea[i])[j]);
+			}
+		}
+		func.arrangeVector(allPtIdx);
+
+		for (int i=0; i<allPtIdx.size(); i++)
+		{
+			pointArea.push_back(points->at(allPtIdx[i]));
+			for (int j=0; j<faceArea.size(); j++)
+			{
+				for (int k=0; k<3; k++)
+				{
+					if (faceArea[j][k] == allPtIdx[i])
+					{
+						faceArea[j][k] = i;
+					}
+				}
+			}
+		}
+
+		meanCoord.init(pointArea, faceArea);
+
+		uvTri = faceArea;
+		uvPoint = meanCoord.m_planarPoint;
+	}
+
+	if (uvTri.size()>0)
+	{
+		arrayInt triArea = eSurfaceCutting::cutFaceIdx;
+
+		arrayVec3f* points = m_Meshfree.surfObj()->point();
+		arrayVec3f* norms = m_Meshfree.surfObj()->pointNormal();
+		arrayVec3i* faces = m_Meshfree.surfObj()->face();
+
+		glColor3f(1,1,1);
+		glEnable(GL_TEXTURE_2D);
+		textureManager::maptexture(CUT_SUR_TEXTURE);
+		glBegin(GL_TRIANGLES);
+		for (int i=0;i<triArea.size(); i++)
+		{
+			Vec3i faceTri = faces->at(triArea[i]);
+			Vec3i uvF = uvTri[i];
+
+			for (int j=0; j<3; j++)
+			{
+				Vec3f pt = points->at(faceTri[j]);
+				Vec3f ptN = norms->at(faceTri[j]);
+				Vec2f ptC = uvPoint[uvF[j]];
+
+				glNormal3f(ptN[0], ptN[1], ptN[2]);
+				glTexCoord2f(ptC[0], ptC[1]);
+				glVertex3f(pt[0], pt[1], pt[2]);
+			}
+		}
+		glEnd();
+		glDisable(GL_TEXTURE_2D);
+	}
+}
 

@@ -4,6 +4,7 @@
 
 #pragma once
 #include "LineTool.h"
+#include "textureManager.h"
 
 class CCuttingSimulation_GPUView : public CView
 {
@@ -54,6 +55,7 @@ protected:
 	void TorusInit(int res);
 	void ManInit(int res);
 	void CylinderInit(int res);
+	void majorPapillaInit();
 // variables
 protected:
 	FILE* f;
@@ -114,6 +116,13 @@ protected:
 	// Cutting_Tuan
 	BOOL m_displayMode[10];
 	LineTool m_lineTool;
+	BOOL bCollisionMode;
+	BOOL bCut, bRemesh;
+	BOOL bInitTexCoord, bSmoothBoundary;
+
+	textureManager texManager;
+
+	void textureTest();
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()

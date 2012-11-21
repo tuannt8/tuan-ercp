@@ -100,7 +100,7 @@ private:
 	// 5. Shape function value at surface point
 	std::vector<std::vector<float>> ShapeFuncValueAtSurfPoint;
 
-	// 7. AABB tree
+	// 7. AABB tree /of edge connection btw face point and efg node?
 	AABBTreeEdgeDiff BVHAABB;
 
 	// 8. Edges

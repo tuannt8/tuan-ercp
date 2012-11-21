@@ -24,5 +24,3 @@ public:
 
 	static GLuint texture[10];
 };
-
-extern textureManager texManager;
