@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SurfaceObj.h"
+#include "Utility.h"
 
 SurfaceObj::SurfaceObj(void)
 {
@@ -109,7 +110,14 @@ void SurfaceObj::drawPoints()
 		glPopMatrix();
 	}
 }
-
+void SurfaceObj::drawPointIdx()
+{
+	for (int i = 0; i < Point.size(); i++)
+	{
+		Vec3f curP = Point[i];
+		Utility::printw(curP[0], curP[1], curP[2], "  %d", i);
+	}
+}
 void SurfaceObj::drawWireFrame(Vec3f color) 
 {
 	int i;

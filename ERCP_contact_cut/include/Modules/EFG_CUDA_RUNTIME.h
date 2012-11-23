@@ -19,6 +19,7 @@
 #include <queue>
 #include <cuda.h>
 #include <cutil_inline.h>
+#include "../Graphics/surfaceobj.h"
 
 #define SYNC_HOST_TO_DEVICE 0
 #define SYNC_DEVICE_TO_HOST 1
@@ -41,20 +42,20 @@ public:
 
 public:
 	// Initialization 1
-	void init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius);
-	void init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, int nbNodeInside);
+	void init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, SurfaceObj* surf);
+	void init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, int nbNodeInside, SurfaceObj* surf);
 
 	// Initialization 2
 	void init(char* filename);
 
 	// Initialization 3 (stress point)
-	void init(std::vector<Vec3f>* nodePos, std::vector<Vec3f>* stressPos, float nodeVolume, float supportRadius);
+	void init(std::vector<Vec3f>* nodePos, std::vector<Vec3f>* stressPos, float nodeVolume, float supportRadius, SurfaceObj* surf);
 
 	// material stiffness matrix
 	void constructMaterialStiffness();
 
 	// init neighbor information
-	void initNeighborInformation();
+	void initNeighborInformation(SurfaceObj* surf);
 
 	// compute node volume
 	void computeNodeMass();
@@ -128,6 +129,7 @@ public:
 	double* returnVertorFormExplicitCompliancematrix(double dt,int itter);
 	void	returnVertorFormExplicitCompliancematrix(double dt,int itter,double* &C);
 	float** returnPreDis(float dt, int itter);
+	float** returnPreDis_CUDA(float dt, int itter);
 	float** returnDis(float dt, int itter);
 
 private:

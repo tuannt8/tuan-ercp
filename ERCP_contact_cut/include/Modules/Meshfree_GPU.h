@@ -32,6 +32,7 @@ public:
 	// drawing
 	void drawSurfObj(Vec3f color, int mode);
 	void drawEFGObj(Vec3f color, float radius, int mode);
+	void drawNeighborOfNode(int index);
 
 	// deformation
 	void updatePositionExplicit(float dt, int itter);
@@ -53,6 +54,7 @@ public:
 	std::vector<std::vector<int>>* neighborNodeOfSurfVertice(){return &NeighborNodeOfSurfVertice;};
 	std::vector<std::vector<float>>* shapeFuncValueAtSurfPoint(){return &ShapeFuncValueAtSurfPoint;};
 	AABBTreeEdgeDiff* getBVH(){return &BVHAABB;};
+	void updateBVH(){BVHAABB.updateAABBTreeBottomUp();}
 	std::vector<Vec2i>* edge(){return &Edge;};
 
 	// Collision response
@@ -60,6 +62,7 @@ public:
 	void				makeMappingMatrix();
 	double*				returnMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal);
 	void				returnMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal,double* &m);
+	void				returnMappingMatrixWithNodeIdx(int triIdx,Vec3d Pos,Vec3d normal,double* &m, arrayInt &mapNode);
 	void				returnMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal,std::vector<Vec2f> &Map);
 	std::vector<Vec2d>	returnVectorMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal);
 	

@@ -82,6 +82,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		m_comboBox.AddString("1. Surface Tri bounding box");
 		m_comboBox.AddString("2. EFG edge bounding box");
+		m_comboBox.AddString("3. Neighbor of surf point");
 
 		m_comboBox.SetCurSel(0);
 	}

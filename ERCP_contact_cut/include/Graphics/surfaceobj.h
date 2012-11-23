@@ -36,6 +36,7 @@ public:
 	void drawFacesAroundEdge(int idx);
 	void drawEdgesInFace(int idx);
 	void drawPoints();
+	void drawPointIdx();
 	void drawFace(int idx);
 	void drawBVH(int depth);
 	void drawBVH();

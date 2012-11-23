@@ -5,6 +5,7 @@
 #pragma once
 #include "LineTool.h"
 #include "textureManager.h"
+#include "catheter.h"
 
 class CCuttingSimulation_GPUView : public CView
 {
@@ -116,6 +117,7 @@ protected:
 	// Cutting_Tuan
 	BOOL m_displayMode[10];
 	LineTool m_lineTool;
+	catheter m_catheter;
 	BOOL bCollisionMode;
 	BOOL bCut, bRemesh;
 	BOOL bInitTexCoord, bSmoothBoundary;

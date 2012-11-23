@@ -297,36 +297,36 @@ void AABBTreeEdgeDiff::updateAABBLeafNode(AABBNode* root)
 
 AABBNode* AABBTreeEdgeDiff::findLeafNode(int edgeIdx)
 {
-	std::vector<AABBNode*> node;
-	Vec3f edge[2]; 
-	edge[0]=(*Point)[(*Edge)[edgeIdx][0]];
-	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
-	GeometricFunc func;
-	if(func.isLineInBox(Root->LeftDown, Root->RightUp, edge))
-	{
-		findLeafNode(Root->Left, edgeIdx, node);
-		findLeafNode(Root->Right, edgeIdx, node);
-	}
-	if(node.size()==0)
-		return NULL;
-	else
-		return node[0];
-
-// 	std::vector<AABBNode*> nodes;
+// 	std::vector<AABBNode*> node;
 // 	Vec3f edge[2]; 
 // 	edge[0]=(*Point)[(*Edge)[edgeIdx][0]];
 // 	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
-// 
-// 	findLeafNode(Root, edgeIdx, nodes);
-// 
-// 	for(int i=0; i<nodes.size(); i++)
+// 	GeometricFunc func;
+// 	if(func.isLineInBox(Root->LeftDown, Root->RightUp, edge))
 // 	{
-// 		if (nodes[i]->IndexInLeafNode == edgeIdx)
-// 		{
-// 			return nodes[i];
-// 		}
+// 		findLeafNode(Root->Left, edgeIdx, node);
+// 		findLeafNode(Root->Right, edgeIdx, node);
 // 	}
-// 	return NULL;
+// 	if(node.size()==0)
+// 		return NULL;
+// 	else
+// 		return node[0];
+
+	std::vector<AABBNode*> nodes;
+	Vec3f edge[2]; 
+	edge[0]=(*Point)[(*Edge)[edgeIdx][0]];
+	edge[1]=(*Node)[(*Edge)[edgeIdx][1]];
+
+	findLeafNode(Root, edgeIdx, nodes);
+
+	for(int i=0; i<nodes.size(); i++)
+	{
+		if (nodes[i]->IndexInLeafNode == edgeIdx)
+		{
+			return nodes[i];
+		}
+	}
+	return NULL;
 }
 
 

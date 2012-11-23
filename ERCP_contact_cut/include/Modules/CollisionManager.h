@@ -59,6 +59,10 @@ public:
 	bool collisionBtwSurfAndLineSeg_return_Index(SurfaceObj* obj, Vec3f l1, Vec3f l2, double radius);//return Collided Tri Idx
 	bool collisionBtwSurfAndLineSeg_return_Index_V2(SurfaceObj* obj, Vec3f l1, Vec3f l2, double radius, double margin);//return Collided Tri Idx
 
+	//Multi part
+	void clearCollisionInfo(){distance.clear();}
+	bool collisionBtwSurfAndLineSeg_part(SurfaceObj* obj, Vec3f l1, Vec3f l2, double radius, double margin);//return Collided Tri Idx
+
 	typedef struct  
 	{
 		int triIdx;

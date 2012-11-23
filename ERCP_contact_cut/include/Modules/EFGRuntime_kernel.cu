@@ -519,6 +519,12 @@ extern "C" void d_setForce(float* nodeForce)
 	cutilSafeCall(cudaMemcpy(d_NodeForce, nodeForce, size, cudaMemcpyHostToDevice));
 }
 
+extern "C" void d_getForce(float* nodeForce)
+{
+	int size=d_NbNode*sizeof(float)*DIM;
+	cutilSafeCall(cudaMemcpy(nodeForce, d_NodeForce, size, cudaMemcpyDeviceToHost));
+}
+
 extern "C" void d_updateNbNeighborNodeFull(int* nbNeighborNode, int size)
 {
 	cudaMemcpy(d_NbNeighborNode, nbNeighborNode, size, cudaMemcpyHostToDevice);

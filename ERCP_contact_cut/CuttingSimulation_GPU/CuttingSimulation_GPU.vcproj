@@ -143,6 +143,7 @@
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
+				OpenMP="false"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
@@ -163,9 +164,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="lapack_win32_MT.lib blas_win32_MT.lib snapconstraints.lib glut32.lib Winmm.lib glew32.lib glaux.lib cuda.lib cutil32D.lib cudart.lib"
+				AdditionalDependencies="liblapack.lib libblas.lib snapconstraints.lib glut32.lib Winmm.lib glew32.lib glaux.lib cuda.lib cutil32D.lib cudart.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../lib/Armadillo/Algebra_Lib;&quot;$(CUDA_PATH)/lib/$(PlatformName)&quot;;../lib"
+				AdditionalLibraryDirectories="../lib/Armadillo/Algebra_Lib;&quot;$(CUDA_PATH)/lib/$(PlatformName)&quot;;../lib;&quot;../lib/Armadillo/lapack-MD-release&quot;"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -380,10 +381,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\include\DataTypes\sparsematrix.h"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>
@@ -534,6 +531,14 @@
 			Name="Cutting"
 			>
 			<File
+				RelativePath=".\catheter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\catheter.h"
+				>
+			</File>
+			<File
 				RelativePath="..\include\Modules\EFGCuttingManager.cpp"
 				>
 			</File>
@@ -583,6 +588,10 @@
 			</File>
 			<File
 				RelativePath=".\releaseLog.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\DataTypes\SparseMatrix.h"
 				>
 			</File>
 			<File

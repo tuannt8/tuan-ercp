@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Meshfree_GPU.h"
+#include "Utility.h"
 
 Meshfree_GPU::Meshfree_GPU(void)
 {
@@ -45,7 +46,7 @@ void Meshfree_GPU::generateEFGObj(int res, bool stress)
 		SupportRadius=nodeGenerator.boxSize().norm()*1.2;
 		SupportRadiusSurf=SupportRadius*1.2;
 		EFGObj=new EFG_CUDA_RUNTIME;
-		EFGObj->init(nodeGenerator.nodePos(), nodeGenerator.stressPoint(), nodeGenerator.nodeVolume(), SupportRadius);
+		EFGObj->init(nodeGenerator.nodePos(), nodeGenerator.stressPoint(), nodeGenerator.nodeVolume(), SupportRadius, SurfObj);
 	}
 	else
 	{
@@ -53,7 +54,7 @@ void Meshfree_GPU::generateEFGObj(int res, bool stress)
 		SupportRadius=nodeGenerator.boxSize().norm()*1.2;
 		SupportRadiusSurf=SupportRadius*1.2;
 		EFGObj=new EFG_CUDA_RUNTIME;
-		EFGObj->init(nodeGenerator.nodePos(), nodeGenerator.nodeVolume(), SupportRadius);
+		EFGObj->init(nodeGenerator.nodePos(), nodeGenerator.nodeVolume(), SupportRadius, SurfObj);
 	}
 }
 
@@ -74,6 +75,36 @@ void Meshfree_GPU::drawEFGObj(Vec3f color, float radius, int mode)
 {
 	EFGObj->draw(color, radius, mode);
 }
+
+void Meshfree_GPU::drawNeighborOfNode( int index )
+{
+	if (index < 0 || index >= SurfObj->point()->size())
+	{
+		return;
+	}
+
+	Vec3f curNode = SurfObj->point()->at(index);
+	std::vector<int> neighborIdx = NeighborNodeOfSurfVertice[index];
+
+	glColor3f(0,0,1);
+	glBegin(GL_LINES);
+	for (int i=0; i<neighborIdx.size(); i++)
+	{
+		Vec3f node = EFGObj->nodePosVec()->at(neighborIdx[i]);
+
+		glVertex3f(curNode[0], curNode[1], curNode[2]);
+		glVertex3f(node[0], node[1], node[2]);
+	}
+	glEnd();
+
+	for (int i=0; i<neighborIdx.size(); i++)
+	{
+		Vec3f node = EFGObj->nodePosVec()->at(neighborIdx[i]);
+
+		Utility::printw(node[0], node[1], node[2], " %d", neighborIdx[i]);
+	}
+}
+
 
 void Meshfree_GPU::updatePositionExplicit(float dt, int itter)
 {
@@ -116,8 +147,11 @@ void Meshfree_GPU::boxConstraint(Vec3f leftDown, Vec3f rightUp)
 void Meshfree_GPU::connectSurfAndEFG()
 {
 	float support=SupportRadiusSurf;
+
+
 	initSurfaceNeighborNode(support);
 	initShapeFuncValueAtSurfPoint(support);
+
 	BVHAABB.init(SurfObj->point(), EFGObj->nodePosVec(), &Edge);
 	BVHAABB.constructAABBTree();
 }
@@ -133,15 +167,21 @@ void Meshfree_GPU::initSurfaceNeighborNode(float supportRadius)
 	NeighborNodeOfSurfVertice.resize(nbSurfPoint);
 
 	//search and save neighbor information
+	CollisionManager collision;
 	for(int i=0;i<nbSurfPoint;i++)
 	{
 		for(int j=0;j<nbNode;j++)
 		{
 			if(((*surfPoint)[i]-(*node)[j]).norm()<supportRadius)
 			{
-				NeighborNodeOfSurfVertice[i].push_back(j);
-				Vec2i edge(i,j);
-				Edge.push_back(edge);
+				Vec3f ptSurfDraf = (*surfPoint)[i];
+				ptSurfDraf += ((*node)[j] - ptSurfDraf)*0.1;
+				if(!collision.collisionBtwSurfAndLineSeg(SurfObj, ptSurfDraf, (*node)[j]))
+				{
+					NeighborNodeOfSurfVertice[i].push_back(j);
+					Vec2i edge(i,j);
+					Edge.push_back(edge);
+				}
 			}
 		}
 	}
@@ -365,6 +405,51 @@ void Meshfree_GPU::returnMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal,double*
 				break;
 
 			}
+			m[NodeIndex*3]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[0]*N;
+			m[NodeIndex*3+1]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[1]*N;
+			m[NodeIndex*3+2]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[2]*N;
+		}
+
+	}
+}
+
+void Meshfree_GPU::returnMappingMatrixWithNodeIdx(int triIdx,Vec3d Pos,Vec3d normal,double* &m,  arrayInt &mapNode)
+{
+	int NbPoint=EFGObj->nbNode();
+
+	std::vector<Vec3f>* point=SurfObj->point();
+	std::vector<Vec3i>* face=SurfObj->face();
+
+	double A;
+	double Ai;
+	double N;
+	int ii[2];
+	int Index;
+	int NodeIndex;
+
+	A=(((*point)[(*face)[triIdx][1]]-(*point)[(*face)[triIdx][0]]).cross((*point)[(*face)[triIdx][2]]-(*point)[(*face)[triIdx][0]])).norm();
+
+	for(int i=0;i<3*NbPoint;i++)
+	{
+		m[i]=0;
+	}
+
+	for(int i=0;i<3;i++)
+	{
+		ii[0]=(i+1)%3;
+		ii[1]=(i+2)%3;
+		Ai=(((*point)[(*face)[triIdx][ii[1]]]-(*point)[(*face)[triIdx][ii[0]]]).cross(Pos-(*point)[(*face)[triIdx][ii[0]]])).norm();
+		N=Ai/A;
+		Index=(*face)[triIdx][i];
+
+		for(int j=0;j<NeighborNodeOfSurfVertice[Index].size();j++)
+		{	
+			NodeIndex=NeighborNodeOfSurfVertice[Index][j];
+			if(NodeIndex>NbPoint)
+			{
+				break;
+			}
+			mapNode.push_back(NodeIndex);
 			m[NodeIndex*3]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[0]*N;
 			m[NodeIndex*3+1]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[1]*N;
 			m[NodeIndex*3+2]+=ShapeFuncValueAtSurfPoint[Index][j]*normal[2]*N;
