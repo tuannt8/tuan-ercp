@@ -944,3 +944,69 @@ void CollisionManager::collisionBtwCylinderAndEfgSurfaceEdge( std::vector<Vec3f>
 	VectorFunc vecFunc;
 	vecFunc.arrangeVector(colEdgeIdx);
 }
+
+bool CollisionManager::collisionBtwSurfAndLineSeg_part( SurfaceObj* obj, Vec3f l1, Vec3f l2, double radius, double margin )
+{
+	GeometricFunc func;
+	AABBNode* root=obj->getBVH()->root();
+	std::vector<Vec3f>* point=obj->point();
+	std::vector<Vec3i>* face=obj->face();
+
+	// 1. Culling using AABB
+
+	std::vector<int> pCollisionTriIdx;
+	Box box;
+	for(int i=0;i<3;i++)
+	{
+		if(l1[i]>=l2[i])
+		{
+			box.leftDown[i]=l2[i]-radius*margin;
+			box.rightUp=l1[i]+radius*margin;
+			box.center[i]=(l1[i]+l2[i])/2.0;
+		}else
+		{
+			box.leftDown[i]=l1[i]-radius*margin;
+			box.rightUp=l2[i]+radius*margin;
+			box.center[i]=(l1[i]+l2[i])/2.0;
+		}
+	}
+	collisionBtwAABBAndBox(root, box, pCollisionTriIdx);
+	Vec3d collidedCylPoint;
+	Vec3d collidedTriPoint;
+	Vec3d P1,P2,P3;
+	int TriIndex;
+	double length;
+
+	Distancefield dis;
+	bool bCollisde = false;
+
+	for(int i=0;i<pCollisionTriIdx.size();i++)
+	{
+		TriIndex=pCollisionTriIdx[i];
+		P1=(*point)[(*face)[TriIndex][0]];
+		P2=(*point)[(*face)[TriIndex][1]];
+		P3=(*point)[(*face)[TriIndex][2]];
+
+		measureMinimumDistanceBetLineandTriangle(l1, l2,P1,P2,P3, collidedTriPoint, collidedCylPoint);
+		length=(collidedCylPoint-collidedTriPoint).norm();
+		if(length<radius*margin)
+		{
+
+			Vec3d CollidedDirec=collidedTriPoint-collidedCylPoint;
+			CollidedDirec.normalize();
+			dis.triIdx=TriIndex;
+			dis.measuredPointInCylinder=collidedCylPoint;
+			dis.collidedCylPoint=collidedCylPoint+CollidedDirec*(radius);
+			dis.collidedTriPoint=collidedTriPoint;
+			dis.PenetratedDirec=-CollidedDirec;
+			dis.Penetration=length-radius;
+
+			distance.push_back(dis);
+			
+			bCollisde = true;
+
+		}
+	}
+
+	return bCollisde;
+}

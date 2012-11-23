@@ -43,6 +43,7 @@ public:
 	void ComputeforcefromComplianceV8(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
 	void ComputeforcefromComplianceV9(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
 	void ComputeforcefromComplianceV10(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
+	void ComputeforcefromComplianceV11(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
 	void PenaltyMethod(Meshfree_GPU* surf,CollisionManager* collision,double K);
 	
 private:

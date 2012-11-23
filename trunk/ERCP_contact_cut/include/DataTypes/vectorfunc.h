@@ -55,15 +55,18 @@ public:
 		v[localIdx]=v[v.size()-1];
 		v.pop_back();
 	};
+
 	int indexOfElement(std::vector<int>* v, int value)
 	{
-		for (int i=0; i<v->size(); i++)
+		std::vector< int >::iterator location=v->end();
+
+		location = std::find( v->begin(), v->end(), value );
+
+		if (location != v->end())
 		{
-			if (v->at(i)==value)
-			{
-				return i;
-			}
+			return std::distance(v->begin(), location);
 		}
+		
 		return -1;
 	}
 	void removeElement(std::vector<Vec3f>& v, int localIdx)

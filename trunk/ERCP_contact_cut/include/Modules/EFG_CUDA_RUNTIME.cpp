@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "EFG_CUDA_RUNTIME.h"
+#include "CollisionManager.h"
 
 extern "C" void d_initGPU(int nbNode, int nbNodeAdded, float* nodeVolume, float* nodePos0, float* nodePos, float* nodeVel, int nbNodeInside);
 extern "C" void d_initStressPoint(int nbStress, float* stressVolume, float* stressPos0, float* stressPos);
@@ -16,6 +17,7 @@ extern "C" void d_computeStress();
 extern "C" void d_computeForce(float damping);
 
 extern "C" void d_setForce(float* nodeForce);
+extern "C" void d_getForce(float* nodeForce);
 
 extern "C" void d_getMass(float* nodeMass);
 extern "C" void d_getStressPointStrain(float* stressPointStrain);
@@ -249,7 +251,7 @@ EFG_CUDA_RUNTIME::~EFG_CUDA_RUNTIME(void)
 		delete [] ShapeFuncDerivZAtStressPointInv;
 }
 
-void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, int nbNodeInside)
+void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, int nbNodeInside, SurfaceObj* surf)
 {
 	NbNode=nodePos->size();
 	SupportRadius=supportRadius;
@@ -316,7 +318,7 @@ void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float
 	constructMaterialStiffness();
 
 	// 2. neighbor information 
-	initNeighborInformation();
+	initNeighborInformation(surf);
 
 	// 3. compute node mass and volume
 	computeNodeMass();
@@ -348,7 +350,7 @@ void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float
 	delete [] shapeFuncDeriveAtNodeInv;*/
 }
 
-void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius)
+void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float supportRadius, SurfaceObj* surf)
 {
 	NbNode=nodePos->size();
 	SupportRadius=supportRadius;
@@ -414,7 +416,7 @@ void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float
 	constructMaterialStiffness();
 
 	// 2. neighbor information 
-	initNeighborInformation();
+	initNeighborInformation(surf);
 
 	// 3. compute node mass and volume
 	computeNodeMass();
@@ -450,7 +452,7 @@ void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, float nodeVolume, float
 	d_initShapeFuncValue(ShapeFuncDerivAtNode, ShapeFuncDerivAtNodeInv);
 }
 
-void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, std::vector<Vec3f>* stressPos, float nodeVolume, float supportRadius)
+void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, std::vector<Vec3f>* stressPos, float nodeVolume, float supportRadius, SurfaceObj* surf)
 {
 	NbNode=nodePos->size();
 	NbStressPoint=stressPos->size();
@@ -542,7 +544,7 @@ void EFG_CUDA_RUNTIME::init(std::vector<Vec3f>* nodePos, std::vector<Vec3f>* str
 	constructMaterialStiffness();
 
 	// 2. neighbor information 
-	initNeighborInformation();
+	initNeighborInformation(surf);
 
 	// 3. compute node mass and volume
 	computeNodeMass();
@@ -667,7 +669,7 @@ void EFG_CUDA_RUNTIME::init(char* filename)
 	constructMaterialStiffness();
 
 	// 2. neighbor information 
-	initNeighborInformation();
+	initNeighborInformation(NULL);
 
 	// 3. compute node mass and volume
 	computeNodeMass();
@@ -722,23 +724,30 @@ void EFG_CUDA_RUNTIME::constructMaterialStiffness()
 		MaterialStiffness[i] *= (E*(1-NU))/((1+NU)*(1-2*NU));
 }
 
-void EFG_CUDA_RUNTIME::initNeighborInformation()
+void EFG_CUDA_RUNTIME::initNeighborInformation(SurfaceObj* surf)
 {
 	int size=NbNode+NbNodeAddedMax;
 	std::vector<int>* neighborNodeIdx=new std::vector<int>[NbNode];
 	Edge=new std::vector<Vec2i>;
 	EdgesAroundNode.resize(NbNode);
 
+	CollisionManager collision;
 	for(int i=0;i<NbNode;i++)
 	{
 		for(int j=0;j<NbNode;j++)
 		{
 			if(norm(&NodePos[i*DIM], &NodePos[j*DIM], DIM)<SupportRadius)
 			{
-				Vec2i edge(i,j);
-				Edge->push_back(edge);
-				EdgesAroundNode[i].push_back(Edge->size()-1);
-				neighborNodeIdx[i].push_back(j);
+				Vec3f pt1,pt2;
+				pt1[0]=NodePos[i*DIM];pt1[1]=NodePos[i*DIM+1];pt1[2]=NodePos[i*DIM+2];
+				pt2[0]=NodePos[j*DIM];pt2[1]=NodePos[j*DIM+1];pt2[2]=NodePos[j*DIM+2];
+				if(!collision.collisionBtwSurfAndLineSeg(surf, pt1, pt2) || !surf)
+				{
+					Vec2i edge(i,j);
+					Edge->push_back(edge);
+					EdgesAroundNode[i].push_back(Edge->size()-1);
+					neighborNodeIdx[i].push_back(j);
+				}
 			}
 		}
 	}
@@ -1994,6 +2003,46 @@ void EFG_CUDA_RUNTIME::returnVertorFormExplicitCompliancematrix(double dt,int it
 	}
 }
 
+float** EFG_CUDA_RUNTIME::returnPreDis_CUDA(float dt, int itter)
+{
+	for(int i=0;i<NbNode*DIM;i++)
+	{
+		NodePreDis[i]=NodePos[i]-NodePos0[i];
+	}
+
+	synchronizeHostAndDevide(SYNC_HOST_TO_DEVICE);
+
+	for(int k=0;k<itter;k++)
+	{
+		//add internal force
+		d_addInternalForce();
+
+// 		d_getDisplacement(NodeDis);
+// 		releaseLog::logMatrix(NodeDis, NbNode*DIM, 1, "Node dis.txt");
+
+		//Explicit integration
+		int nbFixedConstraint=FixedNodeIdx.size();
+		d_explicitIntegration(dt, nbFixedConstraint);
+
+// 		d_getDisplacement(NodeDis);
+// 		releaseLog::logMatrix(NodeDis, NbNode*DIM, 1, "Node dis 1.txt");
+		//
+	}
+		d_getDisplacement(NodeDis);
+		releaseLog::logMatrix(NodeDis, NbNode*DIM, 1, "Node dis 1.txt");
+	cuCtxSynchronize();
+	synchronizeHostAndDevide(SYNC_DEVICE_TO_HOST);
+
+	for(int i=0;i<NbNode*DIM;i++)
+	{
+		NodePreDis[i]=NodeDis[i]-NodePreDis[i];
+	}
+
+
+
+	return &NodePreDis;
+}
+
 float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 {
 	for(int i=0;i<NbNode*DIM;i++)
@@ -2003,8 +2052,6 @@ float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 
 	for(int k=0;k<itter;k++)
 	{
-
-
 		//add internal force
 		addInternalForce();
 
@@ -2054,8 +2101,6 @@ float** EFG_CUDA_RUNTIME::returnPreDis(float dt, int itter)
 	}
 
 	return &NodePreDis;
-
-	
 }
 
 float** EFG_CUDA_RUNTIME::returnDis(float dt, int itter)
@@ -2170,7 +2215,8 @@ void EFG_CUDA_RUNTIME::updatePosition(double* nodeforce, double C, double dt, in
 			(*NodePosVec)[i][j]=NodePos[i*3+j];
 		}
 	}
-	BVHAABB.updateAABBTreeBottomUp();
+
+//	BVHAABB.updateAABBTreeBottomUp();
 }
 
 
@@ -2201,6 +2247,7 @@ void EFG_CUDA_RUNTIME::updatePosition()
 			(*NodePosVec)[i][j]=NodePos[i*3+j];
 		}
 	}
+
 	BVHAABB.updateAABBTreeBottomUp();
 }
 

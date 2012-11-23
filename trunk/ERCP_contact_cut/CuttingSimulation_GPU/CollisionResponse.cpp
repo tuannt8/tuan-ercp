@@ -1107,7 +1107,6 @@ void CollisionResponse::ComputeforcefromComplianceV9(float dt, int itter, Meshfr
 
 void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision)
 {
-
 	std::vector<CollisionManager::Distancefield> distance;
 	distance=collision->getDistance();
 
@@ -1124,11 +1123,16 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 	mat penetration;	penetration.set_size(nbCollide); penetration.fill(0.0);
 	mat InternalDis;	InternalDis.set_size(3*Nb1),InternalDis.fill(0.0);
 
+
 	//Internal Displacement
 	float** DisAddress=surf->efgObj()->returnPreDis(dt,itter);
 	float*  nodeMass=surf->efgObj()->nodeMass();
 
+
+
 	double C=dt*dt*itter*(itter+1)/(2*nodeMass[0]);
+
+
 
 	if(nbCollide){
 		for(int i=0;i<Nb1*3;i++)
@@ -1159,6 +1163,7 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 
 		}
 
+
 		delete [] mapping;
 		mapping=NULL;
 
@@ -1174,11 +1179,141 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 		//Internal Force
 		InternalDis=-trans(m1)*force;
 	}
+
+
 	double* InternalForce;
 	InternalForce=new double[3*Nb1];
 
 	Vec3d transferdForce(0,0,100);
-	
+
+	for(int i=0;i<3*Nb1;i++)
+	{
+		InternalForce[i]=InternalDis(i);
+	}
+		
+	surf->efgObj()->updatePosition(InternalForce,C,dt,itter);
+	surf->updateSurfPosition();
+
+	delete [] InternalForce;
+	InternalForce=NULL;
+}
+
+void CollisionResponse::ComputeforcefromComplianceV11(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision)
+{
+	VectorFunc func;
+	std::vector<CollisionManager::Distancefield> distance;
+	distance=collision->getDistance();
+
+	int Nb1=surf->efgObj()->nbNode();
+	int Nb2=2;
+	int nbCollide=distance.size();	
+
+	Vec3d normal;
+
+	mat m1;				m1.set_size(nbCollide,3*Nb1); m1.fill(0.0);
+	mat mm1;			mm1.set_size(nbCollide,3*Nb1); mm1.fill(0.0);
+	mat mcm;			mcm.set_size(nbCollide,nbCollide); mcm.fill(0.0);
+	mat force;			force.set_size(nbCollide); force.fill(0.0);
+	mat penetration;	penetration.set_size(nbCollide); penetration.fill(0.0);
+	mat InternalDis;	InternalDis.set_size(3*Nb1),InternalDis.fill(0.0);
+
+
+	//Internal Displacement
+	float** DisAddress=surf->efgObj()->returnPreDis(dt,itter);
+	float*  nodeMass=surf->efgObj()->nodeMass();
+
+	double C=dt*dt*itter*(itter+1)/(2*nodeMass[0]);
+
+
+
+	if(nbCollide){
+
+		for(int i=0;i<Nb1*3;i++)
+		{
+			InternalDis(i)=(*DisAddress)[i];
+		}
+
+		for(int i=0;i<nbCollide;i++){
+			penetration(i)=distance[i].Penetration;
+		}
+
+
+		//
+		arrayInt affectedEFGNodes;
+		std::vector<arrayInt>* neighborSurf = surf->neighborNodeOfSurfVertice();
+		std::vector<Vec3i>* face=surf->surfObj()->face();
+		for(int i=0;i<nbCollide;i++)
+		{
+			for (int j=0; j<3; j++)
+			{
+				int Index=(*face)[distance[i].triIdx][j];
+				arrayInt neighborNode = neighborSurf->at(Index);
+				for (int k=0; k<neighborNode.size(); k++)
+				{
+					if (!std::binary_search(affectedEFGNodes.begin(), affectedEFGNodes.end(), neighborNode[k]))
+					{
+						std::vector<int>::iterator it;
+						it = std::lower_bound(affectedEFGNodes.begin(), affectedEFGNodes.end(), neighborNode[k]);
+						affectedEFGNodes.insert(it, neighborNode[k]);
+					}
+				}
+			}
+		}
+		int nbAffectedNodes = affectedEFGNodes.size();
+		//
+		mat m1t;		m1t.set_size(nbCollide, 3*nbAffectedNodes);
+		//	penetration.print("pene1.txt");
+		double* mapping;
+		mapping=new double[3*Nb1];
+
+		for(int i=0;i<nbCollide;i++)
+		{
+			arrayInt efgNodeIdx;
+			normal=distance[i].PenetratedDirec;
+
+			surf->returnMappingMatrixWithNodeIdx(distance[i].triIdx,distance[i].collidedTriPoint,normal,mapping, efgNodeIdx);
+			func.arrangeVector(efgNodeIdx);
+
+			for (int j=0; j<efgNodeIdx.size(); j++)
+			{
+				int nodeIdx = efgNodeIdx[j];
+				int colIdx = func.indexOfElement(&affectedEFGNodes, nodeIdx);
+				if (colIdx <0 || colIdx > nbAffectedNodes)
+				{
+					int a = efgNodeIdx[0];
+				}
+				for (int k=0; k<3; k++)
+				{
+					m1t(i,colIdx*3+k)=mapping[nodeIdx*3+k];
+				}
+			}
+
+			for(int j=0;j<3*Nb1;j++){
+				m1(i,j)=mapping[j];
+			}
+		}
+
+		delete [] mapping;
+		mapping=NULL;
+
+		penetration-=m1*(InternalDis);
+
+		//Construct MCM
+	//	mcm=(m1*trans(m1))*C;
+		mcm = (m1t*trans(m1t))*C;
+
+		//Gauss Seidel 
+		int Iteration=20;
+		force=GaussSeidelMethod1(mcm,penetration,Iteration);
+
+		//Internal Force
+		InternalDis=-trans(m1)*force;
+	}
+
+	double* InternalForce;
+	InternalForce=new double[3*Nb1];
+
+	Vec3d transferdForce(0,0,100);
 
 	for(int i=0;i<3*Nb1;i++)
 	{
@@ -1187,10 +1322,9 @@ void CollisionResponse::ComputeforcefromComplianceV10(float dt, int itter, Meshf
 
 	surf->efgObj()->updatePosition(InternalForce,C,dt,itter);
 	surf->updateSurfPosition();
+
 	delete [] InternalForce;
 	InternalForce=NULL;
-
-
 }
 
 void CollisionResponse::PenaltyMethod(Meshfree_GPU* surf,CollisionManager* collision,double K)
@@ -1202,9 +1336,6 @@ void CollisionResponse::PenaltyMethod(Meshfree_GPU* surf,CollisionManager* colli
 	Vec3d force;
 	Vec3d forcet;
 	forcet.clear();
-	
-
-	
 	
 	for(int i=0;i<distance.size();i++)
 	{
@@ -1316,4 +1447,5 @@ void CollisionResponse::GaussSeidelMethod(Matrix& hcht, std::vector<float>& delt
 			}
 		}
 	}
+
 }

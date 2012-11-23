@@ -139,6 +139,7 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	bInitTexCoord = FALSE;
 	SetTimer(1,20,NULL);
 	InitGL();
+	releaseLog::init();
 
 	int res=15;
 	//LiverInit(res);
@@ -165,7 +166,7 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	{
 		START = !START;
 	}
-	else if(lsChar=='W')
+	else if(lsChar=='E')
 	{
 		bCollisionMode = !bCollisionMode;
 	}
@@ -191,26 +192,43 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if (lsChar == 'G')
 	{
-		char* source = ("C:\\Users\\tuan\\Desktop\\testObj.stl");
-		char* des = ("C:\\Users\\tuan\\Desktop\\testObj.txt");
+		char* source = ("C:\\Users\\tuan\\Desktop\\donut4.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\donut4.txt");
 
 		CSTL surObj;
 		surObj.ReadData(source);
 		surObj.WriteToObj(des);
 	}
+	else if(lsChar=='N')
+	{
+		m_catheter.adjustStringLength(-0.2);
+	}
+	else if(lsChar=='M')
+	{
+		m_catheter.adjustStringLength(0.2);
+	}
+	else if(lsChar=='J')
+	{
+		m_catheter.rotate(0.1);
+	}
+	else if(lsChar=='K')
+	{
+		m_catheter.rotate(-0.1);
+	}
 	else if(lsChar=='O')
 	{
+		m_catheter.move(Vec3f(speed,0,0));
 		m_lineTool.moveCurrentPoint(Vec3f(speed,0,0));
 	}
 	else if(lsChar=='P')
 	{
+		m_catheter.move(Vec3f(-speed,0,0));
 		m_lineTool.moveCurrentPoint(Vec3f(-speed,0,0));
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
 		m_displayMode[nChar - 48] = ! m_displayMode[nChar - 48];
 	}
-
 
 	switch (nChar)
 	{
@@ -228,7 +246,21 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		break;
 	}
 
-
+	switch (nChar)
+	{
+	case VK_UP:
+		m_catheter.move(Vec3f(0,speed,0));
+		break;
+	case VK_DOWN:
+		m_catheter.move(Vec3f(0,-speed,0));
+		break;
+	case VK_LEFT:
+		m_catheter.move(Vec3f(0, 0, speed));
+		break;
+	case VK_RIGHT:
+		m_catheter.move(Vec3f(0, 0, -speed));
+		break;
+	}
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
 
@@ -297,21 +329,52 @@ void CCuttingSimulation_GPUView::OnSize(UINT nType, int cx, int cy)
 void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: Add your message handler code here and/or call default
+
+
 	float dt=0.03;
 	int n=10;
 
+	if (bCut)
+	{
+		dt = 0.0001;
+		n=1;
+	}
 
 
 	if(START)
 	{
 		if (bCollisionMode)
 		{
-			arrayVec3f* toolPoint = m_lineTool.frontPoint();
-			Vec3f P1 = (*toolPoint)[0];
-			Vec3f P2 = (*toolPoint)[1];		
-			Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
-			Response.ComputeforcefromComplianceV10(dt/n,n,&m_Meshfree,&m_Collision);
+// 			arrayVec3f* toolPoint = m_lineTool.frontPoint();
+// 			Vec3f P1 = (*toolPoint)[0];
+// 			Vec3f P2 = (*toolPoint)[1];		
+//			Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
 
+			if (bCut)
+			{
+				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+				m_Meshfree.updateBVH();
+
+				m_CuttingManger.cylinderCutting(&m_Meshfree, m_catheter.toolPoint(), TOOL_RADIUS);
+
+				simpleRemesh mesh;
+				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
+			}
+
+
+			m_Collision.clearCollisionInfo();
+			arrayVec3f toolPoint = m_catheter.catheterPoint();
+			for (int i=0; i<toolPoint.size()-1; i++)
+			{
+				m_Collision.collisionBtwSurfAndLineSeg_part(m_Meshfree.surfObj(),toolPoint[i],toolPoint[i+1],m_catheter.catheterRadius(),1.1);
+			}
+			if (!bCut)
+			{
+				arrayVec3f lines = m_catheter.stringPoint();
+				m_Collision.collisionBtwSurfAndLineSeg_part(m_Meshfree.surfObj(),lines[0],lines[1],m_catheter.stringRadius(),1.1);
+			}
+			
+			Response.ComputeforcefromComplianceV11(dt/n,n,&m_Meshfree,&m_Collision);
 			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_HOST_TO_DEVICE);
 		}
 		else
@@ -319,6 +382,7 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 			if (bCut)
 			{
 				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+				m_Meshfree.updateBVH();
 
 				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
 
@@ -368,20 +432,9 @@ void CCuttingSimulation_GPUView::InitGL()
 void CCuttingSimulation_GPUView::DrawText()
 {
 	CString text;
-	if (!START)
-		text.Format("Static");
-	else
-	{
-		if (bCollisionMode)
-			text.Format("Collision mode");
-		else
-		{
-			if (bCut)
-				text.Format("Deform mode-Cut");
-			else
-				text.Format("Free deform mode");
-		}
-	}
+	text.AppendFormat("Start: %s; ", START? "Y":"N");
+	text.AppendFormat("Col: %s; ", bCollisionMode? "Y":"N");
+	text.AppendFormat("Cut: %s; ", bCut? "Y":"N");
 
 
 	glPushMatrix();
@@ -411,7 +464,7 @@ void CCuttingSimulation_GPUView::DrawView()
 
 	textureTest();
 
-	m_lineTool.draw(2);
+
 
 	DrawText();
 	drawDebug();
@@ -421,20 +474,34 @@ void CCuttingSimulation_GPUView::DrawView()
 	if (m_displayMode[2])
 		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
 
+	if (!m_displayMode[3])
+	{
+		m_lineTool.draw(2);
+	}
+
 	if (!m_displayMode[4])
 		m_Meshfree.surfObj()->drawBVH();
 
 	if (!m_displayMode[5])
+	{
+		glColor3f(0.7,0.2,0.2);
 		m_Meshfree.efgObj()->drawEdge();
+	}
 
 	if (!m_displayMode[6])
 		m_Meshfree.drawEFGObj(Vec3f(1,0,0),2,0);
 
+	if (!m_displayMode[7])
+	{
+		m_Meshfree.surfObj()->drawPointIdx();
+	}
+	if (m_displayMode[8])
+		m_catheter.draw(2);
+
 	if (!m_displayMode[9])
 		m_Collision.drawCollisionInfo(Vec3d(0,1,0));
 
-	if (!m_displayMode[8])
-		m_lineTool.draw(3);
+
 
 	glPopMatrix();
 	glPopAttrib();
@@ -579,13 +646,15 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
-	m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-	m_Meshfree.generateEFGObj(10, false);
+	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
+	m_Meshfree.loadSurfObj("../data/donut2.txt");
+
+	m_Meshfree.generateEFGObj(5, false);
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
 	m_Meshfree.initFixedConstraintGPU();
 
-// 	//	m_Meshfree.loadSurfObj("../data/mp_super_high.txt");
+// 		
 // 	//	m_Meshfree.loadSurfObj("../data/papilla_hr_1.txt");
 // 	//	m_Meshfree.loadSurfObj("../data/mp2_h.txt");
 // 	//	m_Meshfree.loadSurfObj("../data/mp_hr2.txt");
@@ -594,6 +663,11 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 
 	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
 	m_lineTool.init(Vec3f(200,0,-200), Vec3f(-100,0,-200));
+
+	m_catheter.init(Vec3f(300,0,50));
+	m_catheter.adjustStringLength(-10);
+	m_catheter.rotate(-0.9);
+
 }
 
 void CCuttingSimulation_GPUView::textureTest()
@@ -757,6 +831,10 @@ void CCuttingSimulation_GPUView::drawDebug()
 			m_Meshfree.efgObj()->drawEdge(index);
 			break;
 		}
-
+	case 2: // BVH bounding EFG edge
+		{
+			m_Meshfree.drawNeighborOfNode(index);
+			break;
+		}
 	}
 }
