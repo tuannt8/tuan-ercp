@@ -612,7 +612,7 @@ void Meshfree_GPU::returnVectorMappingMatrix(int triIdx,Vec3d Pos,Vec3d normal,s
 void Meshfree_GPU::updateShapeFunction(std::vector<int>& pointIdx)
 {
 	MLSShapeFunc func;
-	std::vector<Vec3f>* point=SurfObj->point();
+	std::vector<Vec3f>* point=SurfObj->point0();
 	std::vector<Vec3f>* node=EFGObj->nodePos0Vec();
 	int nbPoint=point->size();
 	int nbNode=node->size();
