@@ -7,7 +7,7 @@
 #define PI 3.141592
 #define EPS 0.000001
 //#define GRAVITY 98
-#define GRAVITY 10
+#define GRAVITY 98
 #define MAX 100000000
 #define MIN -100000000
 #define MARGIN 5

@@ -661,9 +661,9 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-	m_Meshfree.loadSurfObj("../data/papilla1.txt");
+	m_Meshfree.loadSurfObj("../data/MP4.txt");
 
-	m_Meshfree.generateEFGObj(8, false);
+	m_Meshfree.generateEFGObj(15, false);
 	m_Meshfree.connectSurfAndEFG();
 //	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
 	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
@@ -671,7 +671,7 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 
 
 	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
-	m_lineTool.init(Vec3f(0,0,0), Vec3f(0,50,0));
+	m_lineTool.init(Vec3f(0,0,0), Vec3f(0,100,0));
 
 	m_catheter.init(Vec3f(300,0,50));
 	m_catheter.adjustStringLength(-10);
