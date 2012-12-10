@@ -57,6 +57,11 @@ public:
 		fp = fopen(filename,"r");
 		f=fopen("et.txt","w");
 
+		if (!fp)
+		{
+			return 0;
+		}
+
 		//file
 		char str[100];
 		CString temp;

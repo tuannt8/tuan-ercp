@@ -196,8 +196,12 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		char* des = ("C:\\Users\\tuan\\Desktop\\donut4.txt");
 
 		CSTL surObj;
-		surObj.ReadData(source);
-		surObj.WriteToObj(des);
+		if (surObj.ReadData(source))
+		{
+			surObj.WriteToObj(des);
+		}
+		else
+			MessageBox("No file to stl file to convert!!!");
 	}
 	else if(lsChar=='N')
 	{
@@ -245,6 +249,10 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		m_lineTool.moveCurrentPoint(Vec3f(0, 0, -speed));
 		break;
 	}
+
+// 	m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+// 	m_Meshfree.updateBVH();
+// 	m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
 
 	switch (nChar)
 	{
@@ -343,7 +351,7 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 
 	if(START)
 	{
-		if (bCollisionMode)
+//		if (bCollisionMode)
 		{
 // 			arrayVec3f* toolPoint = m_lineTool.frontPoint();
 // 			Vec3f P1 = (*toolPoint)[0];
@@ -352,23 +360,29 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 
 			if (bCut)
 			{
+// 				m_Collision.clearCollisionInfo();
+// 				Response.ComputeforcefromComplianceV11(dt/n,n,&m_Meshfree,&m_Collision);
+
 				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
 				m_Meshfree.updateBVH();
 
-				m_CuttingManger.cylinderCutting(&m_Meshfree, m_catheter.toolPoint(), TOOL_RADIUS);
+				//m_CuttingManger.cylinderCutting(&m_Meshfree, m_catheter.toolPoint(), TOOL_RADIUS);
+				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
 
-				simpleRemesh mesh;
-				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
+// 				simpleRemesh mesh;
+// 				//mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
+// 				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 10);
+// 				eSurfaceCutting::cutFaceIdx.clear();
 			}
 
 
 			m_Collision.clearCollisionInfo();
 			arrayVec3f toolPoint = m_catheter.catheterPoint();
-			for (int i=0; i<toolPoint.size()-1; i++)
-			{
-				m_Collision.collisionBtwSurfAndLineSeg_part(m_Meshfree.surfObj(),toolPoint[i],toolPoint[i+1],m_catheter.catheterRadius(),1.1);
-			}
-			if (!bCut)
+// 			for (int i=0; i<toolPoint.size()-1; i++)
+// 			{
+// 				m_Collision.collisionBtwSurfAndLineSeg_part(m_Meshfree.surfObj(),toolPoint[i],toolPoint[i+1],m_catheter.catheterRadius(),1.1);
+// 			}
+			if (bCollisionMode)
 			{
 				arrayVec3f lines = m_catheter.stringPoint();
 				m_Collision.collisionBtwSurfAndLineSeg_part(m_Meshfree.surfObj(),lines[0],lines[1],m_catheter.stringRadius(),1.1);
@@ -377,35 +391,35 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 			Response.ComputeforcefromComplianceV11(dt/n,n,&m_Meshfree,&m_Collision);
 			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_HOST_TO_DEVICE);
 		}
-		else
-		{
-			if (bCut)
-			{
-				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
-				m_Meshfree.updateBVH();
-
-				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
-
-				simpleRemesh mesh;
-				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
-			}
-			if (bRemesh)
-			{
-				bRemesh = false;
-
-				simpleRemesh mesh;
-				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 20);
-				arrayInt newPt = mesh.newPointIdx;
-				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
-				mesh.updateShapeFunc(&m_Meshfree, newPt);
-			}
-			for (int i=0; i<5; i++)
-			{
-				m_Meshfree.updatePositionExplicitFree(0.01);
-			}
-
-			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_DEVICE_TO_HOST);
-		}
+// 		else
+// 		{
+// 			if (bCut)
+// 			{
+// 				m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+// 				m_Meshfree.updateBVH();
+// 
+// 				m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
+// 
+// 				simpleRemesh mesh;
+// 				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
+// 			}
+// 			if (bRemesh)
+// 			{
+// 				bRemesh = false;
+// 
+// 				simpleRemesh mesh;
+// 				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 20);
+// 				arrayInt newPt = mesh.newPointIdx;
+// 				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
+// 				mesh.updateShapeFunc(&m_Meshfree, newPt);
+// 			}
+// 			for (int i=0; i<5; i++)
+// 			{
+// 				m_Meshfree.updatePositionExplicitFree(0.01);
+// 			}
+// 
+// 			m_Meshfree.efgObj()->synchronizeHostAndDevide(SYNC_DEVICE_TO_HOST);
+// 		}
 	}
 
 	InvalidateRect(NULL, FALSE);
@@ -496,7 +510,7 @@ void CCuttingSimulation_GPUView::DrawView()
 		m_Meshfree.surfObj()->drawPointIdx();
 	}
 	if (m_displayMode[8])
-		m_catheter.draw(2);
+		m_catheter.draw(3);
 
 	if (!m_displayMode[9])
 		m_Collision.drawCollisionInfo(Vec3d(0,1,0));
@@ -647,22 +661,17 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-	m_Meshfree.loadSurfObj("../data/donut2.txt");
+	m_Meshfree.loadSurfObj("../data/papilla1.txt");
 
-	m_Meshfree.generateEFGObj(5, false);
+	m_Meshfree.generateEFGObj(8, false);
 	m_Meshfree.connectSurfAndEFG();
-	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
+//	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
+	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
 	m_Meshfree.initFixedConstraintGPU();
 
-// 		
-// 	//	m_Meshfree.loadSurfObj("../data/papilla_hr_1.txt");
-// 	//	m_Meshfree.loadSurfObj("../data/mp2_h.txt");
-// 	//	m_Meshfree.loadSurfObj("../data/mp_hr2.txt");
-// 	m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-// 	//	m_Meshfree.loadSurfObj("../data/cube_hole_convex.txt");
 
 	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
-	m_lineTool.init(Vec3f(200,0,-200), Vec3f(-100,0,-200));
+	m_lineTool.init(Vec3f(0,0,0), Vec3f(0,50,0));
 
 	m_catheter.init(Vec3f(300,0,50));
 	m_catheter.adjustStringLength(-10);
@@ -837,4 +846,42 @@ void CCuttingSimulation_GPUView::drawDebug()
 			break;
 		}
 	}
+
+	//Draw other information
+	drawMajorPapilla();
+}
+
+void CCuttingSimulation_GPUView::drawMajorPapilla()
+{
+	arrayVec3f* points = m_Meshfree.surfObj()->point();
+	arrayVec3f* norms = m_Meshfree.surfObj()->pointNormal();
+	arrayVec3i* faces = m_Meshfree.surfObj()->face();
+
+	VectorFunc func;
+	arrayInt addedIdx = eSurfaceCutting::cutFaceIdx;
+
+	glBegin(GL_TRIANGLES);
+		glColor3f(0.76, 0.5, 0.2);
+	for (int i=0; i<faces->size(); i++)
+	{
+
+		if (!func.isElementInVector(&addedIdx, i))
+		{
+			//glColor3f(0.88, 0.6, 0.3);
+			continue;
+		}
+// 		else
+// 		{
+// 			glColor3f(0.76, 0.4, 0.2);
+// 		}
+
+		for (int j=0; j<3; j++)
+		{
+			Vec3f pt = points->at(faces->at(i)[j]);
+			Vec3f normE = norms->at(faces->at(i)[j]);
+			glNormal3f(normE[0], normE[1], normE[2]);
+			glVertex3f(pt[0], pt[1], pt[2]);
+		}
+	}
+	glEnd();
 }

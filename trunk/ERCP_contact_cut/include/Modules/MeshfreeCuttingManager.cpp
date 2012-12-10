@@ -384,7 +384,7 @@ void  MeshfreeCuttingManager::updateConnection_CPU()
 	surfObj->dis()->resize(surfNode->size());
 }
 
-void MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec3f>* toolPoint_in, float radius )
+bool MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec3f>* toolPoint_in, float radius )
 {
 	Obj_GPU=obj;
 	toolPoint = toolPoint_in;
@@ -394,13 +394,15 @@ void MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec
 	EFGCuttingManager efgCuttingManager;
 	eSurfaceCutting surCutting;
 
-	surCutting.cutting(obj->surfObj(), toolPoint_in);
+	bool test = surCutting.cutting(obj->surfObj(), toolPoint_in);
 	surCutting.stepDebug();
 
 	//UPdate internal nodes
 	efgCuttingManager.cylinderCut(obj->efgObj(), toolPoint, toolRadius);
 	//Update surface nodes
  	updateConnectionCylinder();
+
+	return test;
 }
 
 void MeshfreeCuttingManager::updateConnectionCylinder()

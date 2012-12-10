@@ -62,6 +62,23 @@ void catheter::draw( int mode )
 		glColor3f(0.3,0.3,0.3);
 		drawCylinder(m_linePoint[0], m_linePoint[1], STRING_RADIUS);
 	}
+	if (mode == 3)
+	{
+		glBegin(GL_LINES);
+		glColor3f(1,0,0);
+		for(int i=0; i<m_point.size()-1; i++)
+		{
+			glVertex3f(m_point[i][0], m_point[i][1], m_point[i][2]);
+			glVertex3f(m_point[i+1][0], m_point[i+1][1], m_point[i+1][2]);
+		}
+		glColor3f(0,0,1);
+		glVertex3f(m_linePoint[0][0], m_linePoint[0][1], m_linePoint[0][2]);
+		glVertex3f(m_linePoint[1][0], m_linePoint[1][1], m_linePoint[1][2]);
+		glEnd();
+
+		glColor3f(0.3,0.3,0.3);
+		drawCylinder(m_linePoint[0], m_linePoint[1], STRING_RADIUS);
+	}
 }
 
 Matrix setUpRotationMatrix(float angle, float u, float v, float w)
