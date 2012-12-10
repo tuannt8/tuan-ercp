@@ -37,7 +37,7 @@ public:
 	std::vector<Vec3f>* addedPoint(){return AddedPoint;};
 
 	//Cylinder cut
-	void cylinderCutting( Meshfree_GPU* obj, std::vector<Vec3f>* toolPoint_in, float radius );
+	bool cylinderCutting( Meshfree_GPU* obj, std::vector<Vec3f>* toolPoint_in, float radius );
 	void updateConnectionCylinder();
 public:
 	FILE* F;

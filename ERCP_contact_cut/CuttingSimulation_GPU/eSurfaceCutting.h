@@ -13,7 +13,7 @@ public:
 	eSurfaceCutting(void);
 	~eSurfaceCutting(void);
 
-	void cutting(SurfaceObj *surf, arrayVec3f *toolPoint);
+	bool cutting(SurfaceObj *surf, arrayVec3f *toolPoint);
 
 	void stepDebug();
 	void stepDebug2();

@@ -962,7 +962,7 @@ public:
 		else return 0;
 	}
 
-	void GeometricFunc::SegPoints(Vec3f& VEC, Vec3f& X, Vec3f& Y,		//closest points
+	static void GeometricFunc::SegPoints(Vec3f& VEC, Vec3f& X, Vec3f& Y,		//closest points
 		const Vec3f P, const Vec3f A,			// seg 1 origin, vector
 		const Vec3f Q, const Vec3f B)			// seg 2 origin, vector
 	{
@@ -1080,8 +1080,15 @@ public:
 		return false;
 	}
 
-	// Note: This is line vs line segment
 	static float distanceBtwLineAndLine(Vec3f l1, Vec3f l2, Vec3f p1, Vec3f p2)
+	{
+		Vec3f X,Y,V;
+		SegPoints(V,X,Y,l1,l2-l1,p1,p2-p1);
+		return (Y-X).norm();
+	}
+
+	// Note: This is line vs line segment
+	static float distanceBtwLineAndLineSeg(Vec3f l1, Vec3f l2, Vec3f p1, Vec3f p2)
 	{
 		Vec3f d1 = l2-l1;
 		Vec3f d2 = p2-p1;

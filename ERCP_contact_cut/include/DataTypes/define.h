@@ -7,7 +7,7 @@
 #define PI 3.141592
 #define EPS 0.000001
 //#define GRAVITY 98
-#define GRAVITY 98
+#define GRAVITY 10
 #define MAX 100000000
 #define MIN -100000000
 #define MARGIN 5
@@ -21,8 +21,8 @@
 
 #define E		1000
 #define NU		0.3
-#define DENSITY	0.004 //0.02 for majorpapilla; 0.001 for liver
-#define DAMPING	1000
+#define DENSITY	0.01 //0.02 for majorpapilla; 0.001 for liver; 0.1 for papilla
+#define DAMPING	100
 
 #define TOOL_RADIUS 3
 
