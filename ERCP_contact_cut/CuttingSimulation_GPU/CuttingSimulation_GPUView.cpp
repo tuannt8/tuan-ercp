@@ -192,8 +192,8 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if (lsChar == 'G')
 	{
-		char* source = ("C:\\Users\\tuan\\Desktop\\donut4.stl");
-		char* des = ("C:\\Users\\tuan\\Desktop\\donut4.txt");
+		char* source = ("C:\\Users\\tuan\\Desktop\\mp_1.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\mp_1.txt");
 
 		CSTL surObj;
 		if (surObj.ReadData(source))
@@ -403,16 +403,16 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 // 				simpleRemesh mesh;
 // 				mesh.removeEarTri(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx);
 // 			}
-// 			if (bRemesh)
-// 			{
-// 				bRemesh = false;
-// 
-// 				simpleRemesh mesh;
-// 				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 20);
-// 				arrayInt newPt = mesh.newPointIdx;
-// 				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
-// 				mesh.updateShapeFunc(&m_Meshfree, newPt);
-// 			}
+			if (bRemesh)
+			{
+				bRemesh = false;
+
+				simpleRemesh mesh;
+				mesh.remesh(m_Meshfree.surfObj(), eSurfaceCutting::cutFaceIdx, 20);
+				arrayInt newPt = mesh.newPointIdx;
+				eSurfaceCutting::cutFaceIdx = mesh.newFaceIdx;
+				mesh.updateShapeFunc(&m_Meshfree, newPt);
+			}
 // 			for (int i=0; i<5; i++)
 // 			{
 // 				m_Meshfree.updatePositionExplicitFree(0.01);
@@ -661,9 +661,9 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-	m_Meshfree.loadSurfObj("../data/MP4.txt");
+	m_Meshfree.loadSurfObj("../data/mp_1.txt");
 
-	m_Meshfree.generateEFGObj(15, false);
+	m_Meshfree.generateEFGObj(8, false);
 	m_Meshfree.connectSurfAndEFG();
 //	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
 	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
