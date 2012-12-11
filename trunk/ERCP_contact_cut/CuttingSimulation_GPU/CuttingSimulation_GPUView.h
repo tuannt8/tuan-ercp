@@ -7,6 +7,9 @@
 #include "textureManager.h"
 #include "catheter.h"
 
+#include "MyFFD.h"
+#include "SignoriniCollision.h"
+
 class CCuttingSimulation_GPUView : public CView
 {
 protected: // create from serialization only
@@ -106,8 +109,8 @@ protected:
 	Vec3f m_Trans;
 	int m_ToolPathIdx;
 
-	//Avatar
-	Cavatar m_tool;
+	//Cavatar
+//	Cavatar m_tool;
 	double time;
 
 	//Collision
@@ -128,6 +131,14 @@ protected:
 	int mode;
 
 	void textureTest();
+
+	//Catheter insertion
+	MyFFD m_catheter1;
+	void renderCatheter();
+
+	SignoriniCollision collisionModel;
+
+
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
