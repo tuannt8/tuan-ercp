@@ -59,7 +59,7 @@
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4996, 4018, 4101, 4267, 4244, 4305, 4005"
 			/>
 			<Tool
@@ -620,6 +620,34 @@
 			</File>
 			<File
 				RelativePath=".\simpleRemesh.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Catheter"
+			>
+			<File
+				RelativePath=".\MyFFD.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MyFFD.h"
+				>
+			</File>
+			<File
+				RelativePath=".\SignoriniCollision.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SignoriniCollision.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\Modules\SpringForce.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\include\Modules\SpringForce.h"
 				>
 			</File>
 		</Filter>

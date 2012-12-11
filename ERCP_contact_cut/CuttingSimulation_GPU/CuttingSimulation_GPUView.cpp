@@ -148,9 +148,23 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	majorPapillaInit();
 
 	//m_Meshfree.makeMappingMatrix();
-	m_tool.init(Vec3f(100,150,200),Vec3f(0,350,200),10);
+//	m_tool.init(Vec3f(100,150,200),Vec3f(0,350,200),10);
 
 //	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
+
+	float M2=1;
+	float ks2=1000;
+	float kt=50;
+	float C2=0.01*ks2;
+	float Cb=0.1*kt;
+	float Ed2=5;
+
+	float RadiusofEndsocope=1.5;
+	float LengthofElement=5;
+	int NbElement=10;
+
+ 	m_catheter1.makeCatheter(LengthofElement,RadiusofEndsocope,NbElement);
+ 	m_catheter1.setMassSpringEndoscope(M2,ks2,C2,kt,Cb,Ed2,0.01);
 }
 
 void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -214,20 +228,24 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	else if(lsChar=='J')
 	{
 		m_catheter.rotate(0.1);
+		m_catheter1.moveCatheter(Vec3f(speed,0,0));
 	}
 	else if(lsChar=='K')
 	{
 		m_catheter.rotate(-0.1);
+		m_catheter1.moveCatheter(Vec3f(-speed,0,0));
 	}
 	else if(lsChar=='O')
 	{
 		m_catheter.move(Vec3f(speed,0,0));
 		m_lineTool.moveCurrentPoint(Vec3f(speed,0,0));
+		m_catheter1.InsertEndoscope(-1);
 	}
 	else if(lsChar=='P')
 	{
 		m_catheter.move(Vec3f(-speed,0,0));
 		m_lineTool.moveCurrentPoint(Vec3f(-speed,0,0));
+		m_catheter1.InsertEndoscope(1);
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
@@ -250,10 +268,6 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		break;
 	}
 
-// 	m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
-// 	m_Meshfree.updateBVH();
-// 	m_CuttingManger.cylinderCutting(&m_Meshfree, m_lineTool.frontPoint(), TOOL_RADIUS);
-
 	switch (nChar)
 	{
 	case VK_UP:
@@ -267,6 +281,22 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		break;
 	case VK_RIGHT:
 		m_catheter.move(Vec3f(0, 0, -speed));
+		break;
+	}
+
+	switch (nChar)
+	{
+	case VK_UP:
+		m_catheter1.moveCatheter(Vec3f(0,speed,0));
+		break;
+	case VK_DOWN:
+		m_catheter1.moveCatheter(Vec3f(0,-speed,0));
+		break;
+	case VK_LEFT:
+		m_catheter1.moveCatheter(Vec3f(0, 0, speed));
+		break;
+	case VK_RIGHT:
+		m_catheter1.moveCatheter(Vec3f(0, 0, -speed));
 		break;
 	}
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
@@ -348,16 +378,17 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 		n=1;
 	}
 
+	if (START)
+	{
+		//m_catheter1.updateCatheter()
+	//	m_catheter1.updateEndoscopeExplicit(0.01, Vec3d(0,-1,0));
+		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, 1);
+	}
 
-	if(START)
+	if(0)//START but later
 	{
 //		if (bCollisionMode)
 		{
-// 			arrayVec3f* toolPoint = m_lineTool.frontPoint();
-// 			Vec3f P1 = (*toolPoint)[0];
-// 			Vec3f P2 = (*toolPoint)[1];		
-//			Collision=m_Collision.collisionBtwSurfAndLineSeg_return_Index_V2(m_Meshfree.surfObj(),P1,P2,TOOL_RADIUS,3);
-
 			if (bCut)
 			{
 // 				m_Collision.clearCollisionInfo();
@@ -478,6 +509,7 @@ void CCuttingSimulation_GPUView::DrawView()
 
 	textureTest();
 
+	collisionModel.drawCollisionInfo();
 
 
 	DrawText();
@@ -488,9 +520,10 @@ void CCuttingSimulation_GPUView::DrawView()
 	if (m_displayMode[2])
 		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
 
+	m_catheter1.drawCatheter(1);
 	if (!m_displayMode[3])
 	{
-		m_lineTool.draw(2);
+		m_catheter1.drawCatheter(2);
 	}
 
 	if (!m_displayMode[4])
@@ -509,12 +542,11 @@ void CCuttingSimulation_GPUView::DrawView()
 	{
 		m_Meshfree.surfObj()->drawPointIdx();
 	}
-	if (m_displayMode[8])
+	if (!m_displayMode[8])
 		m_catheter.draw(3);
 
 	if (!m_displayMode[9])
 		m_Collision.drawCollisionInfo(Vec3d(0,1,0));
-
 
 
 	glPopMatrix();
@@ -576,7 +608,7 @@ void CCuttingSimulation_GPUView::LiverInit(int res)
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
 	m_Meshfree.initFixedConstraintGPU();
-	m_Tool.initEx2();
+//	m_Tool.initEx2();
 
 	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 }
@@ -592,7 +624,7 @@ void CCuttingSimulation_GPUView::ManInit(int res)
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
 	m_Meshfree.initFixedConstraintGPU();
-	m_Tool.initEx2();
+//	m_Tool.initEx2();
 }
 
 
@@ -641,7 +673,7 @@ void CCuttingSimulation_GPUView::TubeInit(int res)
 	m_Meshfree.connectSurfAndEFG();
 	//m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-100,500,500));
 	//m_Meshfree.initFixedConstraintGPU();
-	m_Tool.initEx1();
+//	m_Tool.initEx1();
 }
 
 void CCuttingSimulation_GPUView::TorusInit(int res)
@@ -653,7 +685,7 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 	m_Meshfree.connectSurfAndEFG();
 	m_Meshfree.boxConstraint(Vec3f(-500,100,-500), Vec3f(500,500,500));
 	m_Meshfree.initFixedConstraintGPU();
-	m_Tool.initEx1();
+//	m_Tool.initEx1();
 }
 
 #pragma "New Function for cutting"
@@ -665,8 +697,8 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 
 	m_Meshfree.generateEFGObj(8, false);
 	m_Meshfree.connectSurfAndEFG();
-//	m_Meshfree.boxConstraint(Vec3f(-150, 100, -300), Vec3f(300, 300, 300));
-	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
+	m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
+//	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
 	m_Meshfree.initFixedConstraintGPU();
 
 
@@ -676,7 +708,6 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 	m_catheter.init(Vec3f(300,0,50));
 	m_catheter.adjustStringLength(-10);
 	m_catheter.rotate(-0.9);
-
 }
 
 void CCuttingSimulation_GPUView::textureTest()
@@ -867,13 +898,8 @@ void CCuttingSimulation_GPUView::drawMajorPapilla()
 
 		if (!func.isElementInVector(&addedIdx, i))
 		{
-			//glColor3f(0.88, 0.6, 0.3);
 			continue;
 		}
-// 		else
-// 		{
-// 			glColor3f(0.76, 0.4, 0.2);
-// 		}
 
 		for (int j=0; j<3; j++)
 		{
@@ -884,4 +910,9 @@ void CCuttingSimulation_GPUView::drawMajorPapilla()
 		}
 	}
 	glEnd();
+}
+
+void CCuttingSimulation_GPUView::renderCatheter()
+{
+		
 }
