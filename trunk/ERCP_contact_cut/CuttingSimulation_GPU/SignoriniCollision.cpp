@@ -2,6 +2,7 @@
 #include "SignoriniCollision.h"
 #include "DataStruct.h"
 #include "Modules/CollisionManager.h"
+#include "Utility.h"
 
 SignoriniCollision::SignoriniCollision(void)
 {
@@ -2778,7 +2779,7 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		// Optimize meshles matrix
 		int nbAffectedNodes = affectedEFGNodes.size();
 		//
-		mat m1t;		m1t.set_size(nbCollide, 3*nbAffectedNodes);
+		mat m1t;		m1t.set_size(nbCollide, 3*nbAffectedNodes); m1t.fill(0.0);
 		//	penetration.print("pene1.txt");
 		double* mapping;
 		mapping=new double[3*Nb1];
@@ -2810,9 +2811,12 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 			}
 		}
 
+
+
 		delete [] mapping;
 
 	//	penetration+=-m1*InternalDis1+m2*InternalDis2;
+		penetration+=-m1*InternalDis1;
 		InternalDis1.fill(0.0);			InternalDis2.fill(0.0);	
 
 		for(int i=0;i<nbCollide;i++){
@@ -2821,34 +2825,34 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		
 		mcm.set_size(nbCollide,nbCollide); // Do we need this?
 		mcm.fill(0.0);
-		//mcm=(m1t*trans(m1t))*C+mm2*trans(m2);
-		mcm = mm2*trans(m2);
+		mcm=(m1t*trans(m1t))*C+mm2*trans(m2);
+		//mcm = (m1t*trans(m1t))*C;
 
 		//Gauss Seidel 
 		force1=GaussSeidelMethod1(mcm,penetration,Iteration);
-		InternalForce1=trans(m1)*force1; // I dont know
+		InternalForce1=-trans(m1)*force1; 
 		InternalForce2+=trans(m2)*force1;
 	}
 
 	InternalDis2=C2%InternalForce2-_catheter->returnPreDisplacement();
 	_catheter->addDisplacementToControlPoint(InternalDis2);
 
-// 	// from force to displace ment of mesh free
-// 	double* InternalForce;
-// 	InternalForce=new double[3*Nb1];
-// 
-// 	Vec3d transferdForce(0,0,100);
-// 
-// 	for(int i=0;i<3*Nb1;i++)
-// 	{
-// 		InternalForce[i]=InternalForce1(i);
-// 	}
-// 
-// 	object->efgObj()->updatePosition(InternalForce,C,dt,itter);
-// 	object->updateSurfPosition();
-// 
-// 	delete [] InternalForce;
-// 	InternalForce=NULL;
+	// from force to displace ment of mesh free
+	double* InternalForce;
+	InternalForce=new double[3*Nb1];
+
+	Vec3d transferdForce(0,0,100);
+
+	for(int i=0;i<3*Nb1;i++)
+	{
+		InternalForce[i]=InternalForce1(i);
+	}
+
+	object->efgObj()->updatePosition(InternalForce,C,dt,itter);
+	object->updateSurfPosition();
+
+	delete [] InternalForce;
+	InternalForce=NULL;
 }
 
 bool SignoriniCollision::CollisionDetectionBtwCatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double marginRatio )

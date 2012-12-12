@@ -100,3 +100,5 @@ void releaseLog::logVectorInt( std::vector<int> &v, char* fileName/*="vectorInt.
 		fclose(temp);
 	}
 }
+
+

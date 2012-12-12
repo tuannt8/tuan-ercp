@@ -3563,7 +3563,7 @@ mat MyFFD::returnVectorFormExplicitCompliancematrixForEndoscope()
 	C.fill(1.0);
 	C*=dt*dt/M;
 	int InsertedIndex=0;
-	double penalty=30000;
+	double penalty=PENALTY_CONSTANT;
 	for(int i=0;i<FixedConstraint.size();i++)
 		for(int j=0;j<3;j++)
 			C(3*FixedConstraint[i]+j)=dt*dt/(M+penalty);
