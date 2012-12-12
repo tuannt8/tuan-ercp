@@ -106,3 +106,23 @@ void Utility::exportToSTL( char* path, arrayVec3f* point, arrayVec3i* face )
 		fclose(f);
 	}
 }
+
+void Utility::LogMatrix( arma::mat* A, char* fileName/*="matrix_log.txt"*/ )
+{
+	CString path;
+	path.Format("../DebugLog/%s", (char*)fileName);
+	FILE* temp = fopen(path.GetBuffer(), ("w"));
+	if (temp)
+	{
+		fprintf(temp, "Log matrix: %dx%d\n", A->n_rows, A->n_cols);
+		for (int i=0; i<A->n_rows; i++)
+		{
+			for (int j=0; j<A->n_cols; j++)
+			{
+				fprintf(temp, "%lf\t", A->at(i,j));
+			}
+			fprintf(temp, "\n");
+		}
+		fclose(temp);
+	}
+}

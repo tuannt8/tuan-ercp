@@ -152,16 +152,16 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 
 //	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 
-	float M2=1;
-	float ks2=1000;
-	float kt=50;
-	float C2=0.01*ks2;
-	float Cb=0.1*kt;
-	float Ed2=5;
+	float M2=10;			//mass
+	float ks2=10000;		// Spring constant
+	float kt=10000;		// bending constant
+	float C2=0.01*ks2;	// Spring damping
+	float Cb=0.01*kt;	// bending damping
+	float Ed2=5;		// viscous friction
 
-	float RadiusofEndsocope=1.5;
-	float LengthofElement=5;
-	int NbElement=10;
+	float RadiusofEndsocope=3.5;
+	float LengthofElement=9;
+	int NbElement=20;
 
  	m_catheter1.makeCatheter(LengthofElement,RadiusofEndsocope,NbElement);
  	m_catheter1.setMassSpringEndoscope(M2,ks2,C2,kt,Cb,Ed2,0.01);
@@ -174,7 +174,7 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	lsChar = char(nChar);
 	double var=4;
 
-	double speed = 1;
+	double speed = 0.3;
 
 	if(lsChar=='Q')
 	{
@@ -369,7 +369,7 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	// TODO: Add your message handler code here and/or call default
 
 
-	float dt=0.03;
+	float dt=0.01;
 	int n=10;
 
 	if (bCut)
@@ -382,7 +382,7 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	{
 		//m_catheter1.updateCatheter()
 	//	m_catheter1.updateEndoscopeExplicit(0.01, Vec3d(0,-1,0));
-		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, 1);
+		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, n);
 	}
 
 	if(0)//START but later

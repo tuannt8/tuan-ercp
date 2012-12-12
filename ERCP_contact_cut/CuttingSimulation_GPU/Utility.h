@@ -1,6 +1,7 @@
 #pragma once
 #include "stdafx.h"
 #include "../include/Modules/EFG_CUDA_RUNTIME.h"
+#include "armadillo"
 
 typedef enum _fileType
 {
@@ -15,6 +16,8 @@ namespace Utility
 	// File
 	void Log(EFG_CUDA_RUNTIME* obj);
 	void Log(float* arr, int rowSize, int colSize = 3);
+
+	void LogMatrix(arma::mat* A, char* fileName="matrix_log.txt");
 
 	void exportToSTL(char* path, arrayVec3f* point, arrayVec3i* face);
 	// Draw
