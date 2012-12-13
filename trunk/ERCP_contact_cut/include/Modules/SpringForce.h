@@ -47,10 +47,12 @@ public:
 	int getNbSprings();
 	void getPointIdxOfSpring(int springIdx, int& idx1, int& idx2);
 	double getPotentialEnergy();
+	double getSpringForce(int index, Vec3d* p, Vec3d* v );
 
 	/* set parameters */
 	void setStiffness(double _ks);
 	void setDamping(double _kd);
+	std::vector<Spring>& getSpring(){return springs;}
 
 	/* add force */
 	void addForce(Vec3d* f, Vec3d* x, Vec3d* v);

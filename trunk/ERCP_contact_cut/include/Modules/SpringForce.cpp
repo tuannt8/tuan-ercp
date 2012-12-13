@@ -118,3 +118,25 @@ double SpringForce::getPotentialEnergy()
 {
 	return potentialEnergy;
 }
+
+double SpringForce::getSpringForce( int index, Vec3d* p, Vec3d* v )
+{
+	Spring spring = springs[index];
+	int a = spring.m1;
+	int b = spring.m2;
+
+	Vec3d u = p[b]-p[a];
+	double d = u.norm();
+	double inverseLength = 1.0f/d;
+
+	//if( d<1.0e-4 ) // null length => no force
+	//	return;
+
+	u *= inverseLength;
+	double elongation = (double)(d - spring.initpos);
+	Vec3d relativeVelocity = v[b]-v[a];
+	double elongationVelocity = dot(u,relativeVelocity);
+	double forceIntensity = (double)(spring.ks*elongation+spring.kd*elongationVelocity);
+	
+	return forceIntensity;
+}

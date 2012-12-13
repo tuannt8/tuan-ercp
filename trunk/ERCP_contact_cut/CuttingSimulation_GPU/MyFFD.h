@@ -113,7 +113,8 @@ public:
 	void drawPenetrationAtControl(int Idx,Vec3d penetration,double lineWidth);
 	void drawLine(Vec3d P1,Vec3d P2,double lineWidth);
 	void drawCylinder(double radius);
-	void drawCylinder( Vec3f a, Vec3f b, float radius );
+	void drawCylinder( Vec3f a, Vec3f b, float radius,  float radius2=0 );
+	void drawCylinder( Vec3f b, Vec3f a, float radius , double colorPercent, Vec3f color, float radius2=0);
 	void drawControlGroup(int centerIdx, int circualrIdx,double radius,double lineWidth);
 	void drawHyperPatchLine(int centerIdx, int circularIdx);
 	void drawHyperPatchLine();
@@ -299,6 +300,8 @@ public:
 	mat returnVectorFormExplicitCompliancematrixForEndoscope();
 
 	void updateEndoscopeExplicit(double dt,Vec3d Gravity);
+	void updateCatheterExplicit(Vec3d gravity, mat* contactForce = NULL);
+
 	mat returnEndoscopeTipDisplacement(){return EndoscopeTipDisplacement;EndoscopeTipDisplacement.fill(0.0);};
 
 	mat returnImplicitDynamicStiffnessMatrixForEndoscope();
@@ -312,6 +315,7 @@ public:
 	void updateCatheter(Vec3d Pos, Vec3d Direc, Vec3d basis, double angle);
 
 	void moveCatheter(Vec3d distance);
+	void addForce(double force);
 
 	//ETC
 	int findCloestCenterPointIndex(Vec3d Pos);
@@ -490,6 +494,10 @@ private:
 
 	FILE* fp;
 
+public:
+	//Catheter --------------------------- Tuan added
+	double L0;
+	Vec3d normF;
 
 private:
 

@@ -31,6 +31,7 @@ MyFFD::MyFFD(void)
 	MappingMatrixforLattice=NULL;
 	
 	fp=fopen("../data/Check/FFD_Multi.txt","w");
+
 }
 
 MyFFD::~MyFFD(void)
@@ -366,9 +367,12 @@ void MyFFD::makeCatheter(double elementLength,double radius, int nb)
 	//make Connectivity
 	NbCon=nb;
 	NbPoint=nb+1;
-	Vec3d direc(-1,0,0);
-	Vec3d Center(70,-35,0);
+	Vec3d direc(-1,0.1,0);direc.normalize();
+	Vec3d Center(150,-90,0);
 	direc.normalize();
+
+	normF = Vec3d(0,0,1);
+	L0 = 5*elementLength;
 
 	InsertedPoint=Center;
 	InsertedDirec=direc;
@@ -1564,6 +1568,8 @@ void MyFFD::setMassSpringEndoscope(double mass, double ks, double kd, double kb,
 	Mass=mass;	Ks=ks;	Kd=kd;	Ed=ed;
 
 	//1. center to surface point
+	m_Spring.addSpring(1,6,ks,kd,(ControlPoint[1]-ControlPoint[6]).norm());
+
 	for(int i=0;i<NbCon;i++)
 	{
 		p1=Con[i][0];
@@ -5965,15 +5971,19 @@ void MyFFD::InsertEndoscope(double dv)
 		if((ControlPoint[i]-InsertedPoint)*InsertedDirec>=0)
 			InsertedIndex=i;
 
-	if(InsertedIndex==NbPoint-1)
-	{
-		ControlPoint[NbPoint-1]+=InsertedDirec*dv;
-		ControlPoint[NbPoint-2]+=InsertedDirec*dv;
-	}else{
-		for(int i=InsertedIndex;i<NbPoint;i++){
-			ControlPoint[i]+=InsertedDirec*dv;
-		}	
-	}
+// 	if(InsertedIndex==NbPoint-1)
+// 	{
+// 		ControlPoint[NbPoint-1]+=InsertedDirec*dv;
+// 		ControlPoint[NbPoint-2]+=InsertedDirec*dv;
+// 	}else{
+// 		for(int i=InsertedIndex;i<NbPoint;i++){
+// 			ControlPoint[i]+=InsertedDirec*dv;
+// 		}	
+// 	}
+
+	for(int i=0;i<NbPoint;i++){
+		ControlPoint[i]+=InsertedDirec*dv;
+	}	
 
 	for (unsigned int i=0;i<FixedConstraint.size();i++)
 		for (int j=0;j<3;j++)
@@ -7200,7 +7210,7 @@ void MyFFD::moveCatheter( Vec3d distance )
 	updateCatheterInsertionPosition(newPos, InsertedDirec);
 }
 
-void MyFFD::drawCylinder( Vec3f a, Vec3f b, float radius )
+void MyFFD::drawCylinder( Vec3f a, Vec3f b, float radius, float radius2 )
 {
 	// This is the default direction for the cylinders to face in OpenGL
 	Vec3f z = Vec3f(0,0,1);         
@@ -7217,8 +7227,19 @@ void MyFFD::drawCylinder( Vec3f a, Vec3f b, float radius )
 	glRotated(angle,t[0],t[1],t[2]);
 
 	GLUquadricObj *quadratic = gluNewQuadric();
-	gluCylinder(quadratic, radius, radius, p.norm(), 10, 5);
+	gluCylinder(quadratic, radius2==0?radius:radius2, radius, p.norm(), 10, 5);
 	glPopMatrix();
+}
+
+void MyFFD::drawCylinder( Vec3f b, Vec3f a, float radius , double colorPercent, Vec3f color, float radius2 )
+{
+	Vec3f c = a + (b-a)*colorPercent;
+
+	glColor3f(color[0], color[1], color[2]);
+	drawCylinder(a,c,radius);
+	glColor3f(1,1,1);
+	drawCylinder(c,b,radius,radius2);
+	 
 }
 
 void MyFFD::drawCatheter( int mode )
@@ -7247,7 +7268,14 @@ void MyFFD::drawCatheter( int mode )
 
 	if (mode == 2)
 	{
-		for (int i=0; i<NbPoint-1; i++)
+		drawCylinder(ControlPoint[0], ControlPoint[1], RadiusOfEndoscope, 0.1, Vec3f(0,1,0), 0.8*RadiusOfEndoscope);
+		drawCylinder(ControlPoint[1], ControlPoint[2], RadiusOfEndoscope, 0.2, Vec3f(0,1,0));
+		drawCylinder(ControlPoint[2], ControlPoint[3], RadiusOfEndoscope, 0.1, Vec3f(0,0,0));
+		drawCylinder(ControlPoint[3], ControlPoint[4], RadiusOfEndoscope, 0.2, Vec3f(0,0,1));
+		drawCylinder(ControlPoint[4], ControlPoint[5], RadiusOfEndoscope, 0.0, Vec3f(0,0,1));
+		drawCylinder(ControlPoint[5], ControlPoint[6], RadiusOfEndoscope, 1.0, Vec3f(0,0,1));
+
+		for (int i=6; i<NbPoint-1; i++)
 		{
 			Vec3d point1 = ControlPoint[i];
 			Vec3d point2 = ControlPoint[i+1];
@@ -7256,7 +7284,11 @@ void MyFFD::drawCatheter( int mode )
 		}
 	}
 
-
+	Vec3d dis = normF.cross(ControlPoint[5] - ControlPoint[1]);
+	dis.normalize(); dis = dis*RadiusOfEndoscope;
+//	dis = Vec3d(0,0,0);
+	glColor3f(0.7,0.7,0.7);
+	drawCylinder(ControlPoint[1]+dis, ControlPoint[5]+dis, RadiusOfEndoscope/5);
 
 
 	float arrowLength = 10;
@@ -7269,4 +7301,115 @@ void MyFFD::drawCatheter( int mode )
 	glEnd();
 }
 
+void MyFFD::updateCatheterExplicit( Vec3d gravity, mat* contactForce)
+{
+	//////////////////////////
+	/* Implicit integration */
+	//////////////////////////
+
+	int InsertedIndex=0;
+
+	/* add gravity */
+	for(int i=0;i<NbPoint;i++)
+	{
+		Force[i]+=gravity;
+	}
+
+	// add contact force
+	if (contactForce)
+	{
+		for(int i=0;i<NbPoint;i++)
+			for (int j=0; j<3;j++)
+				Force[i][j]+=contactForce->at(i*3+j);
+	}
+
+	//constrain by electric line
+	//Solution 1: add spring btw 1 and 6
+// 	Vec3d l16 = ControlPoint[6]-ControlPoint[1]; l16.normalize();
+// 	double _force = 0.6*m_Spring.getSpringForce(0, ControlPoint, Velocity);
+// 	{//0-2
+// 		Vec3d l20 = ControlPoint[0]-ControlPoint[2]; l20.normalize();
+// 		Vec3d radius = normF.cross(l20); radius.normalize();
+// 		double ff = (l20.cross(l16)).norm()*_force;
+// 		Force[0]+=radius*ff;
+// 		Force[2]-=radius*ff;
+// 	}
+// 	{//5-7
+// 		Vec3d l75 = ControlPoint[5]-ControlPoint[7]; l75.normalize();
+// 		Vec3d radius = normF.cross(l75); radius.normalize();
+// 		double ff = (l75.cross(l16)).norm()*_force;
+// 		Force[7]+=radius*ff;
+// 		Force[5]-=radius*ff;
+// 	}
+
+	// sol2: add benddind to 0-1
+	Vec3d l10 = ControlPoint[5]-ControlPoint[1];
+	Vec3d radius = normF.cross(l10); radius.normalize();
+
+	double Lc = (ControlPoint[6]-ControlPoint[1]).norm();
+	double lForce = 10000*(Lc-L0);
+
+	Force[1] += radius*lForce;
+	Force[3] -= radius*lForce*2;
+	Force[5] += radius*lForce;
+	
+
+
+	/* add internal force */
+	m_Spring.addForce(Force,ControlPoint,Velocity);
+
+	/* add Bending force */
+	addBendingForce();
+
+	/* add environment damping force */
+	for(int i=0;i<NbPoint;i++)
+		Force[i]-=Velocity[i]*Ed;
+
+	//////////////////////////
+	/* Explicit integration */
+	//////////////////////////
+
+	for(int i=0;i<NbPoint;i++)
+		if((ControlPoint[i]-InsertedPoint)*InsertedDirec>=0)
+			InsertedIndex=i;
+
+
+	for(int i=0;i<NbPoint;i++)
+	{
+		Vec3d dv=Force[i]/Mass*dt;
+		Velocity[i]+=dv;
+		ControlPoint[i]+=(Velocity[i]*dt);
+	}
+
+
+	//Constraints
+	
+
+	if(InsertedIndex==NbPoint-1)
+	{
+		ControlPoint[(NbPoint-2)]=ControlPoint0[(NbPoint-2)];
+		ControlPoint[(NbPoint-1)]=ControlPoint0[(NbPoint-1)];
+	}else{
+		for(int i=InsertedIndex;i<NbPoint;i++)
+			ControlPoint[i]=ControlPoint0[i];	
+	}
+	/*for (int i=0;i<FixedConstraint.size();i++)
+		ControlPoint[FixedConstraint[i]]=ControlPoint0[FixedConstraint[i]];*/
+
+
+	for(int i=0;i<NbPoint;i++)
+		Force[i].clear();
+}
+
+void MyFFD::addForce( double force )
+{
+// 	m_Spring.getSpring()[0].initpos += force;
+// 	return;
+
+	L0+=force;
+// 	if (lForce<0)
+// 	{
+// 		lForce = 0;
+// 	}
+}
 
