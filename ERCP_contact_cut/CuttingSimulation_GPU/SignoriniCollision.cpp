@@ -2737,7 +2737,7 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 
 	C2=_catheter->returnVectorFormExplicitCompliancematrixForEndoscope();
 
-	InternalForce2+=_catheter->returnInternalExplicitForceOfEndoscope();
+//	InternalForce2+=_catheter->returnInternalExplicitForceOfEndoscope();
 
 	if (CollisionDetectionBtwCatheterAndMeshles(_catheter, object, 1.1))// Collision detection btw catheter and object
 	{
@@ -2826,7 +2826,6 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		mcm.set_size(nbCollide,nbCollide); // Do we need this?
 		mcm.fill(0.0);
 		mcm=(m1t*trans(m1t))*C+mm2*trans(m2);
-		//mcm = (m1t*trans(m1t))*C;
 
 		//Gauss Seidel 
 		force1=GaussSeidelMethod1(mcm,penetration,Iteration);
@@ -2834,8 +2833,16 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		InternalForce2+=trans(m2)*force1;
 	}
 
-	InternalDis2=C2%InternalForce2-_catheter->returnPreDisplacement();
+// 	InternalDis2=C2%InternalForce2-_catheter->returnPreDisplacement();
+// 	_catheter->addDisplacementToControlPoint(InternalDis2);
+
+
+	//_catheter->updateCatheterExplicit(InternalForce2, Vec3d(0,-1,0));
+	_catheter->updateCatheterExplicit(Vec3d(0,-1,0));
+	InternalDis2=C2%InternalForce2;
 	_catheter->addDisplacementToControlPoint(InternalDis2);
+
+
 
 	// from force to displace ment of mesh free
 	double* InternalForce;
@@ -2869,6 +2876,13 @@ bool SignoriniCollision::CollisionDetectionBtwCatheterAndMeshles( MyFFD* _cathet
 	distance.clear();
 	InspectedTri.clear();
 
+	if (InsertedIndex>1)
+	{//Now we detect nearest
+		int index = PotentialCollideSegment(_catheter, object);
+	}
+
+	std::vector<CollisionManager::Distancefield> distanceM;
+	int index;
 	for (int i=0;i<InsertedIndex;i++)
 	{
 		Vec3d point1 = Points[i];
@@ -2876,29 +2890,50 @@ bool SignoriniCollision::CollisionDetectionBtwCatheterAndMeshles( MyFFD* _cathet
 
 		CollisionManager colM;
 		colM.collisionBtwSurfAndLineSeg_part(object->surfObj(),point1,point2,_catheter->returnRadiusOfEndoscope(),marginRatio);
-		std::vector<CollisionManager::Distancefield> distanceM = colM.getDistance();
-		if (distanceM.size()>0)
+		std::vector<CollisionManager::Distancefield> test = colM.getDistance();
+		if (test.size()>0 && test.size()>distanceM.size()/2)
 		{
-			for (int j=0; j<distanceM.size(); j++)
-			{
-				CollisionManager::Distancefield dColis = distanceM[j];
+			distanceM = test;
+			index = i;
+		}
+	}
+	if (distanceM.size()>0)
+	{
+		for (int j=0; j<distanceM.size(); j++)
+		{
+			CollisionManager::Distancefield dColis = distanceM[j];
 
-				SignoriniCollision::Distancefield newDistance;
-				newDistance.triIdx = dColis.triIdx;
-				newDistance.cylinderIdx = i;
-				newDistance.measuredPointInCylinder = dColis.measuredPointInCylinder;
-				newDistance.collidedCylPoint=dColis.collidedCylPoint;
-				newDistance.collidedTriPoint=dColis.collidedTriPoint;
-				newDistance.Distance=dColis.Penetration + _catheter->returnRadiusOfEndoscope();
-				newDistance.PenetratedDirec=dColis.PenetratedDirec;
-				newDistance.Penetration=dColis.Penetration;
+			SignoriniCollision::Distancefield newDistance;
+			newDistance.triIdx = dColis.triIdx;
+			newDistance.cylinderIdx = index;
+			newDistance.measuredPointInCylinder = dColis.measuredPointInCylinder;
+			newDistance.collidedCylPoint=dColis.collidedCylPoint;
+			newDistance.collidedTriPoint=dColis.collidedTriPoint;
+			newDistance.Distance=dColis.Penetration + _catheter->returnRadiusOfEndoscope();
+			newDistance.PenetratedDirec=dColis.PenetratedDirec;
+			newDistance.Penetration=dColis.Penetration;
 
-				distance.push_back(newDistance);
-				InspectedTri.push_back(dColis.triIdx);
-			}
+			distance.push_back(newDistance);
+			InspectedTri.push_back(dColis.triIdx);
 		}
 	}
 
 	func.arrangeVector(InspectedTri);
 	return distance.size()>0;
+}
+
+int SignoriniCollision::PotentialCollideSegment( MyFFD* _catheter, Meshfree_GPU* object )
+{
+	VectorFunc func;
+	Vec3d* Points=_catheter->returnControlPoint();
+	int NbPoint=_catheter->returnNbPoint();
+	AABBNode* root=object->surfObj()->getBVH()->root();
+
+	//Largest index that intersect
+	for (int i=0; i<NbPoint; i++)
+	{
+		
+	}
+
+	return 0;
 }

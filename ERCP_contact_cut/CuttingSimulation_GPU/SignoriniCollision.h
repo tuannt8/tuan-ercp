@@ -200,7 +200,7 @@ public:
 	//
 	void interactionSimulation(MyFFD* _catheter, Meshfree_GPU* object, float dt, int itter);
 	bool CollisionDetectionBtwCatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double param3 );
-
+	int PotentialCollideSegment( MyFFD* _catheter, Meshfree_GPU* object );
 
 	void ComputeforceImplicit(MyFFD* surf,MyFFD* cont);
 

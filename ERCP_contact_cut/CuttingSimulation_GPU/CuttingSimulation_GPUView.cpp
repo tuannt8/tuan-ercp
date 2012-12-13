@@ -152,16 +152,16 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 
 //	m_lineTool.init(Vec3f(100,150,200),Vec3f(0,350,200));
 
-	float M2=10;			//mass
-	float ks2=10000;		// Spring constant
-	float kt=10000;		// bending constant
+	float M2=100;			//mass
+	float ks2=100000;		// Spring constant
+	float kt= 50000;		// bending constant
 	float C2=0.01*ks2;	// Spring damping
 	float Cb=0.01*kt;	// bending damping
-	float Ed2=5;		// viscous friction
+	float Ed2=300;		// viscous friction
 
-	float RadiusofEndsocope=3.5;
-	float LengthofElement=9;
-	int NbElement=20;
+	float RadiusofEndsocope=8;
+	float LengthofElement=RadiusofEndsocope*2*6/3;
+	int NbElement=50;
 
  	m_catheter1.makeCatheter(LengthofElement,RadiusofEndsocope,NbElement);
  	m_catheter1.setMassSpringEndoscope(M2,ks2,C2,kt,Cb,Ed2,0.01);
@@ -174,7 +174,8 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	lsChar = char(nChar);
 	double var=4;
 
-	double speed = 0.3;
+	double speed = 0.1;
+	double force = 1.000;
 
 	if(lsChar=='Q')
 	{
@@ -206,8 +207,8 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if (lsChar == 'G')
 	{
-		char* source = ("C:\\Users\\tuan\\Desktop\\mp_1.stl");
-		char* des = ("C:\\Users\\tuan\\Desktop\\mp_1.txt");
+		char* source = ("C:\\Users\\tuan\\Desktop\\test.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\test.txt");
 
 		CSTL surObj;
 		if (surObj.ReadData(source))
@@ -220,10 +221,12 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	else if(lsChar=='N')
 	{
 		m_catheter.adjustStringLength(-0.2);
+		m_catheter1.addForce(force);
 	}
 	else if(lsChar=='M')
 	{
 		m_catheter.adjustStringLength(0.2);
+		m_catheter1.addForce(-force);
 	}
 	else if(lsChar=='J')
 	{
@@ -381,8 +384,13 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	if (START)
 	{
 		//m_catheter1.updateCatheter()
-	//	m_catheter1.updateEndoscopeExplicit(0.01, Vec3d(0,-1,0));
+		//m_catheter1.updateCatheterExplicit(Vec3d(0,-10,0));
 		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, n);
+
+		if (bCollisionMode)
+		{
+
+		}
 	}
 
 	if(0)//START but later
@@ -496,6 +504,12 @@ void CCuttingSimulation_GPUView::DrawText()
 	glColor3f(1.0,0.7,0.4);
 	Utility::printw(textPos[0], textPos[1], textPos[2], text.GetBuffer());
 
+	CString text2;
+	text2.AppendFormat("Force: %lf", m_catheter1.L0);
+	Vec3d textPos2 = Vec3d(textPosX, 0.47*m_Cam.m_Distance/1.4, textPosZ);
+	textPos2 = rotateM*(textPos2);
+	Utility::printw(textPos2[0], textPos2[1], textPos2[2], text2.GetBuffer());
+
 	glPopMatrix();
 }
 void CCuttingSimulation_GPUView::DrawView()  
@@ -555,7 +569,10 @@ void CCuttingSimulation_GPUView::DrawView()
 
 void CCuttingSimulation_GPUView::SetupView()
 {
-	glClearColor(1.0f, 1.0f, 1.0f, 0.5f);
+	if (m_displayMode[0])
+		glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
+	else
+		glClearColor(1.0f, 1.0f, 1.0f, 0.5f);
 
 	GLfloat diffuseLight[] = {0.4f,0.4f,0.4f,1.0f};
 	GLfloat ambientLight[] = {0.8f,0.8f,0.8f,1.0f};
@@ -694,6 +711,7 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
 	m_Meshfree.loadSurfObj("../data/mp_1.txt");
+	//m_Meshfree.loadSurfObj("../data/test.txt");
 
 	m_Meshfree.generateEFGObj(8, false);
 	m_Meshfree.connectSurfAndEFG();
