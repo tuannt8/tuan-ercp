@@ -15,6 +15,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <float.h>
+#include "stdafx.h"
 
 
 #include <omp.h>
@@ -29,6 +30,7 @@
 //-----------------------------------------------------------------------------------------------------
 
 using namespace NEWMAT;
+using namespace arma;
 
 class SignoriniCollision
 {
@@ -199,7 +201,9 @@ public:
 	void InteractionSimulationV6(MyFFD* surf,MyFFD* endo);
 	//
 	void interactionSimulation(MyFFD* _catheter, Meshfree_GPU* object, float dt, int itter);
-	bool CollisionDetectionBtwCatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double param3 );
+	bool CollisionDetectionBtwCatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double marginRatio );
+	bool CollisionDetectionBtw1CatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double marginRatio );
+
 	int PotentialCollideSegment( MyFFD* _catheter, Meshfree_GPU* object );
 
 	void ComputeforceImplicit(MyFFD* surf,MyFFD* cont);
@@ -273,7 +277,7 @@ private:
 	FILE* Delta;
 
 
-
+	CTimeTick timeTick;
 	//	void calculateInverse(double** A,int Nb);
 	/*int NB;
 	double*** Compliance;*/

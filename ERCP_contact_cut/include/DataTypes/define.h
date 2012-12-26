@@ -19,7 +19,7 @@
 #define SPLINE4 1		//4th order spline
 #define EXPONENTIAL 2
 
-#define E		1000
+#define E		10000
 #define NU		0.3
 #define DENSITY	0.01 //0.02 for majorpapilla; 0.001 for liver; 0.1 for papilla
 #define DAMPING	1000

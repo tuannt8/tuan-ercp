@@ -45,6 +45,8 @@ public:
 	void ComputeforcefromComplianceV10(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
 	void ComputeforcefromComplianceV11(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
 	void PenaltyMethod(Meshfree_GPU* surf,CollisionManager* collision,double K);
+	void ComputeforcefromComplianceV12(float dt, int itter, Meshfree_GPU* surf,CollisionManager* collision);
+
 	
 private:
 	typedef struct  

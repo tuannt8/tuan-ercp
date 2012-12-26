@@ -53,16 +53,12 @@ void MeshfreeCuttingManager::cuttingProg(Meshfree_GPU* obj, CuttingTool* tool, i
 		VertexOnCutFront=SurfCutting.vertexIdxOnCutFront();
 		return;
 	}
-	TimeTick.SetStart();
+
 	EFGCuttingManager efgCuttingManager;
 	efgCuttingManager.cutting(obj->efgObj(), tool->cutPoint(), tool->cutFace());
-	TimeTick.SetEnd();
-	fprintf(F,"EFGCutting: %f\n",TimeTick.GetTick());
 
-	TimeTick.SetStart();
+
 	updateConnection_GPUProg(toolPathIdx);
-	TimeTick.SetEnd();
-	fprintf(F,"UpdateConnection: %f\n",TimeTick.GetTick());
 }
 
 void MeshfreeCuttingManager::cutting(Meshfree_GPU* obj, CuttingTool* tool)
@@ -75,27 +71,22 @@ void MeshfreeCuttingManager::cutting(Meshfree_GPU* obj, CuttingTool* tool)
 	std::vector<int> pointsOnCutFront;
 	tool->getCutFrontIdx(pointsOnCutFront);
 
-	TimeTick.SetStart();
+
 	EFGCuttingManager efgCuttingManager;
 	SurfaceCuttingManager surfCuttingManager;
 	efgCuttingManager.cutting(obj->efgObj(), CutPoint, CutSurf);
-	TimeTick.SetEnd();
-	fprintf(F,"EFGCutting: %f\n",TimeTick.GetTick());
 
-	TimeTick.SetStart();
+
+
 	surfCuttingManager.cutting(obj->surfObj(), tool, &pointsOnCutFront);
-	TimeTick.SetEnd();
-	fprintf(F,"SurfCutting: %f\n",TimeTick.GetTick());
 
 	AddedPoint=surfCuttingManager.addedPoint();
 	AddedPointNormal=surfCuttingManager.addedPointNormal();
 	PreNbPoint=surfCuttingManager.preNbPoint();
 	VertexOnCutFront=surfCuttingManager.vertexIdxOnCutFront();
 
-	TimeTick.SetStart();
+
 	updateConnection_GPU();
-	TimeTick.SetEnd();
-	fprintf(F,"UpdateConnection: %f\n",TimeTick.GetTick());
 }
 
 void MeshfreeCuttingManager::updateConnection_GPUProg(int toolPathIdx)
@@ -386,6 +377,7 @@ void  MeshfreeCuttingManager::updateConnection_CPU()
 
 bool MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec3f>* toolPoint_in, float radius )
 {
+	bool test = false;
 	Obj_GPU=obj;
 	toolPoint = toolPoint_in;
 	toolRadius = radius;
@@ -394,11 +386,12 @@ bool MeshfreeCuttingManager::cylinderCutting( Meshfree_GPU* obj, std::vector<Vec
 	EFGCuttingManager efgCuttingManager;
 	eSurfaceCutting surCutting;
 
-	bool test = surCutting.cutting(obj->surfObj(), toolPoint_in);
+	test = surCutting.cutting(obj->surfObj(), toolPoint_in);
 	surCutting.stepDebug();
 
 	//UPdate internal nodes
 	efgCuttingManager.cylinderCut(obj->efgObj(), toolPoint, toolRadius);
+	
 	//Update surface nodes
  	updateConnectionCylinder();
 
