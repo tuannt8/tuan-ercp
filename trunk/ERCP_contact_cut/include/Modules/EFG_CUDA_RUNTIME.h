@@ -129,6 +129,7 @@ public:
 	double* returnVertorFormExplicitCompliancematrix(double dt,int itter);
 	void	returnVertorFormExplicitCompliancematrix(double dt,int itter,double* &C);
 	float** returnPreDis(float dt, int itter);
+	float** returnPreDisNoDeform();
 	float** returnPreDis_CUDA(float dt, int itter);
 	float** returnDis(float dt, int itter);
 

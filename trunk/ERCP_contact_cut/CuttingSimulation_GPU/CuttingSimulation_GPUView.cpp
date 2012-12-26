@@ -174,7 +174,7 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	lsChar = char(nChar);
 	double var=4;
 
-	double speed = 0.1;
+	double speed = 1;
 	double force = 1.000;
 
 	if(lsChar=='Q')
@@ -207,13 +207,14 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if (lsChar == 'G')
 	{
-		char* source = ("C:\\Users\\tuan\\Desktop\\test.stl");
-		char* des = ("C:\\Users\\tuan\\Desktop\\test.txt");
+		char* source = ("C:\\Users\\tuan\\Desktop\\mp_3.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\mp_3.txt");
 
 		CSTL surObj;
 		if (surObj.ReadData(source))
 		{
 			surObj.WriteToObj(des);
+			MessageBox("Convert successful");
 		}
 		else
 			MessageBox("No file to stl file to convert!!!");
@@ -249,6 +250,17 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		m_catheter.move(Vec3f(-speed,0,0));
 		m_lineTool.moveCurrentPoint(Vec3f(-speed,0,0));
 		m_catheter1.InsertEndoscope(1);
+	}
+	else if(lsChar=='T')
+	{
+		CTimeTick timeTick;
+		timeTick.SetStart();
+
+		float*A = new float[100000];
+		delete A;
+
+		timeTick.SetEnd();
+		releaseLog::urgentLog("Time: %lf", timeTick.GetTick());
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
@@ -375,22 +387,26 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 	float dt=0.01;
 	int n=10;
 
-	if (bCut)
-	{
-		dt = 0.0001;
-		n=1;
-	}
+// 	if (bCut)
+// 	{
+// 		dt = 0.0001;
+// 		n=1;
+// 	}
 
 	if (START)
 	{
-		//m_catheter1.updateCatheter()
-		//m_catheter1.updateCatheterExplicit(Vec3d(0,-10,0));
+		if (bCut)
+		{
+			m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp(); // Cost quite a lot of time
+			m_Meshfree.updateBVH();
+
+			arrayVec3f toolPoint = m_catheter1.stringPoint();
+			m_CuttingManger.cylinderCutting(&m_Meshfree, &toolPoint, TOOL_RADIUS);
+		}
+	//	m_catheter1.updateCatheterExplicit(Vec3d(0,-10,0));
 		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, n);
 
-		if (bCollisionMode)
-		{
 
-		}
 	}
 
 	if(0)//START but later
@@ -523,7 +539,7 @@ void CCuttingSimulation_GPUView::DrawView()
 
 	textureTest();
 
-	collisionModel.drawCollisionInfo();
+//	collisionModel.drawCollisionInfo();
 
 
 	DrawText();
@@ -709,9 +725,8 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
-	//m_Meshfree.loadSurfObj("../data/papilla_highRes.txt");
-	m_Meshfree.loadSurfObj("../data/mp_1.txt");
-	//m_Meshfree.loadSurfObj("../data/test.txt");
+//	m_Meshfree.loadSurfObj("../data/mp_lowRes.txt");
+	m_Meshfree.loadSurfObj("../data/mp_3.txt");
 
 	m_Meshfree.generateEFGObj(8, false);
 	m_Meshfree.connectSurfAndEFG();

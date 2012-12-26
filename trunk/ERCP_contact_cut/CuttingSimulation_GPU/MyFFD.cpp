@@ -372,12 +372,17 @@ void MyFFD::makeCatheter(double elementLength,double radius, int nb)
 	direc.normalize();
 
 	normF = Vec3d(0,0,1);
-	L0 = 5*elementLength;
+	L0 = 4*elementLength;
+	stringPointIdx[0] = 1;
+	stringPointIdx[1] = 5;
 
 	InsertedPoint=Center;
 	InsertedDirec=direc;
 
+
+
 	RadiusOfEndoscope=radius;
+	radiusOfStringCatheter = RadiusOfEndoscope/5;
 	Con=new Vec2i[NbCon];
 	ControlPoint=new Vec3d[NbPoint];
 	PreControlPoint=new Vec3d[NbPoint];
@@ -1435,16 +1440,27 @@ mat MyFFD::returnMappingMatforOneLattice(int idx1, Vec3d pos, Vec3d normal)
 	m.set_size(3*NbPoint);
 	m.fill(0.0);
 
+	// Normal segment
+	int pt1idx = idx1;
+	int pt2idx = idx1+1;
+
+	// electric string
+	if (idx1 == STRING_INDEX) 
+	{
+		pt1idx = stringPointIdx[0];
+		pt2idx = stringPointIdx[1];
+	}
+
 	double m1,m2;
-	m2=(pos-ControlPoint[idx1]).norm()/(ControlPoint[idx1+1]-ControlPoint[idx1]).norm();
+	m2=(pos-ControlPoint[pt1idx]).norm()/(ControlPoint[pt2idx]-ControlPoint[pt1idx]).norm();
 	m1=1-m2;
 
 
 	for(int j=0;j<3;j++)
-		m(3*idx1+j)=m1*normal(j);
+		m(3*pt1idx+j)=m1*normal(j);
 
 	for(int j=0;j<3;j++)
-		m(3*(idx1+1)+j)=m2*normal(j);
+		m(3*(pt2idx)+j)=m2*normal(j);
 
 	return m;
 }
@@ -7206,8 +7222,14 @@ void MyFFD::loadConstraints( char* filename )
 
 void MyFFD::moveCatheter( Vec3d distance )
 {
+	for(int i=0;i<NbPoint;i++){
+		ControlPoint[i]+=distance;
+		ControlPoint0[i]+=distance;
+	}
+
 	Vec3d newPos = InsertedPoint + distance;
-	updateCatheterInsertionPosition(newPos, InsertedDirec);
+	InsertedPoint=newPos;
+	//updateCatheterInsertionPosition(newPos, InsertedDirec);
 }
 
 void MyFFD::drawCylinder( Vec3f a, Vec3f b, float radius, float radius2 )
@@ -7237,7 +7259,7 @@ void MyFFD::drawCylinder( Vec3f b, Vec3f a, float radius , double colorPercent, 
 
 	glColor3f(color[0], color[1], color[2]);
 	drawCylinder(a,c,radius);
-	glColor3f(1,1,1);
+	glColor3f(0.7,0.7,0.7);
 	drawCylinder(c,b,radius,radius2);
 	 
 }
@@ -7284,11 +7306,9 @@ void MyFFD::drawCatheter( int mode )
 		}
 	}
 
-	Vec3d dis = normF.cross(ControlPoint[5] - ControlPoint[1]);
-	dis.normalize(); dis = dis*RadiusOfEndoscope;
-//	dis = Vec3d(0,0,0);
+	arrayVec3f stringP = stringPoint();
 	glColor3f(0.7,0.7,0.7);
-	drawCylinder(ControlPoint[1]+dis, ControlPoint[5]+dis, RadiusOfEndoscope/5);
+	drawCylinder(stringP[0], stringP[1], RadiusOfEndoscope/5);
 
 
 	float arrowLength = 10;
@@ -7343,18 +7363,16 @@ void MyFFD::updateCatheterExplicit( Vec3d gravity, mat* contactForce)
 // 	}
 
 	// sol2: add benddind to 0-1
-	Vec3d l10 = ControlPoint[5]-ControlPoint[1];
+	Vec3d l10 = ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]];
 	Vec3d radius = normF.cross(l10); radius.normalize();
 
-	double Lc = (ControlPoint[6]-ControlPoint[1]).norm();
+	double Lc = (ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]]).norm();
 	double lForce = 10000*(Lc-L0);
 
 	Force[1] += radius*lForce;
 	Force[3] -= radius*lForce*2;
 	Force[5] += radius*lForce;
 	
-
-
 	/* add internal force */
 	m_Spring.addForce(Force,ControlPoint,Velocity);
 
@@ -7411,5 +7429,22 @@ void MyFFD::addForce( double force )
 // 	{
 // 		lForce = 0;
 // 	}
+}
+
+float MyFFD::stringRadius()
+{
+	return radiusOfStringCatheter;
+}
+
+arrayVec3f MyFFD::stringPoint()
+{
+	arrayVec3f point;
+	Vec3d dis = normF.cross(ControlPoint[stringPointIdx[1]] - ControlPoint[stringPointIdx[0]]);
+	dis.normalize(); dis = dis*0;//RadiusOfEndoscope;
+
+	point.push_back(ControlPoint[stringPointIdx[0]]+dis);
+	point.push_back(ControlPoint[stringPointIdx[1]]+dis);
+
+	return point;
 }
 

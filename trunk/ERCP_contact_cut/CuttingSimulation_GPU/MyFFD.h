@@ -20,7 +20,7 @@
 
 #define PENALTY_CONSTANT 300000
 
-
+#define STRING_INDEX 9999
 
 using namespace NEWMAT;
 
@@ -316,7 +316,9 @@ public:
 
 	void moveCatheter(Vec3d distance);
 	void addForce(double force);
+	arrayVec3f stringPoint();
 
+	float stringRadius();
 	//ETC
 	int findCloestCenterPointIndex(Vec3d Pos);
 	int findCloestCircularPointIndex(Vec3d Pos);
@@ -375,7 +377,8 @@ private:
 	void makeLocalBendingDampingMatrix2(Vec3d p1, Vec3d p2, Vec3d p3, double K);
 	void makeEndoscopeStiffnessMatrix(bool Constraint);
 	void makeEndoscopeDampingMatrix();
-	
+
+
 
 
 
@@ -485,6 +488,10 @@ private:
 	Vec3d InsertedDirec;
 	double RadiusOfEndoscope;
 	mat EndoscopeTipDisplacement;
+
+	//catheter 
+	double radiusOfStringCatheter;
+	int stringPointIdx[2];
 
 	//Around Point
 	std::vector<int>* AroundPoint;

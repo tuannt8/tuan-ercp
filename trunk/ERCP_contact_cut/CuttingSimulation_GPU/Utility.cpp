@@ -3,6 +3,9 @@
 #include "GL/GL.h"
 #include "GL/glut.h"
 
+extern "C" int matrix_mul_cuda( float* h_C, float* h_A, float* h_B, int ra, int ca, int cb );
+
+
 void Utility::printw (float x, float y, float z, char* format, ...)
 {
 	glDisable(GL_LIGHTING);
@@ -43,11 +46,15 @@ void Utility::Log( EFG_CUDA_RUNTIME* obj )
 
 void Utility::Log( float* arr, int rowSize, int colSize /*= 3*/ )
 {
-	FILE* f = fopen("../DebugLog/floatArray.txt", "w");
-	fprintf(f, "Number of element: %d\n", rowSize);
+	FILE* f = fopen("../DebugLog/matrix.txt", "w");
+	fprintf(f, "Number of element: %dx%d\n", rowSize, colSize);
 	for (int i = 0; i < rowSize; i++)
 	{
-		fprintf(f, "%lf %lf %lf\n", arr[i*3], arr[i*3 + 1], arr[i*3 + 2]);
+		for (int j=0; j<colSize; j++)
+		{
+			fprintf(f, "%lf\t", arr[i*colSize+j]);
+		}
+		fprintf(f, "\n");
 	}
 	fclose(f);
 }
@@ -119,10 +126,72 @@ void Utility::LogMatrix( arma::mat* A, char* fileName/*="matrix_log.txt"*/ )
 		{
 			for (int j=0; j<A->n_cols; j++)
 			{
-				fprintf(temp, "%lf\t", A->at(i,j));
+				fprintf(temp, "%.08f\t", A->at(i,j));
 			}
 			fprintf(temp, "\n");
 		}
 		fclose(temp);
 	}
 }
+
+arma::mat Utility::multiplyMat( arma::mat*mA, arma::mat*mB )
+{
+	int cuda_size = 16;
+
+	int row_A = mA->n_rows;
+	int col_A = mA->n_cols;
+	int row_B = mB->n_rows;
+	int col_B = mB->n_cols;
+
+	// to 16
+	int row_A_k = (row_A/cuda_size +1)*cuda_size;
+	int col_A_k = (col_A/cuda_size +1)*cuda_size;
+	int row_B_k = (row_B/cuda_size +1)*cuda_size;
+	int col_B_k = (col_B/cuda_size +1)*cuda_size;
+
+	float *A, *B, *C;
+	A = new float[row_A_k*col_A_k];
+	B = new float[row_B_k*col_B_k];
+	C = new float[row_A_k*col_B_k];
+
+	for (int i=0; i<row_A_k; i++)
+	{
+		for (int j=0; j<col_A_k; j++)
+		{
+			if (i<row_A && j<col_A)
+				A[i*col_A_k + j] = mA->at(i,j);
+			else
+				A[i*col_A_k + j] = 0;
+		}
+	}
+
+	for (int i=0; i<row_B_k; i++)
+	{
+		for (int j=0; j<col_B_k; j++)
+		{
+			if (i<row_B && j<col_B)
+				B[i*col_B_k + j] = mB->at(i,j);
+			else
+				B[i*col_B_k + j] = 0;
+		}
+	}
+
+	matrix_mul_cuda(C,A,B,row_A_k,col_A_k,col_B_k);
+
+	arma:: mat matC;
+	matC.set_size(row_A, col_B);
+	for (int i=0; i<row_A; i++)
+	{
+		for (int j=0; j<col_B; j++)
+		{
+			matC(i,j) = C[i*col_B_k+j];
+		}
+	}
+
+	delete A;
+	delete B;
+	delete C;
+
+	return matC;
+}
+

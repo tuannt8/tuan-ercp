@@ -2269,3 +2269,13 @@ void EFG_CUDA_RUNTIME::synchronizeHostAndDevide( int mode )
 		d_setDisplacement(NodeDis);
 	}
 }
+
+float** EFG_CUDA_RUNTIME::returnPreDisNoDeform()
+{
+	for(int i=0;i<NbNode*DIM;i++)
+	{
+		NodePreDis[i]=NodePos[i]-NodePos0[i];
+	}
+
+	return &NodePreDis;
+}

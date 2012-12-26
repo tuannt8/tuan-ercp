@@ -25,4 +25,12 @@ namespace Utility
 	void drawPlane( double x, double y, double z, double large, int res , Vec3f direction = Vec3f(0,1,0));
 	// util
 	void okMessageBox(char* message);
+
+	arma::mat multiplyMat(arma::mat*A, arma::mat*B);
 };
+
+// class cudaUtil
+// {
+// 	static float*A;
+// 	static float*B;
+// };

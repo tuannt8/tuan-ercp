@@ -310,6 +310,10 @@
 				RelativePath="..\include\Modules\TimeTick.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Utility.cu"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

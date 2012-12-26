@@ -3,6 +3,7 @@
 #include "DataStruct.h"
 #include "Modules/CollisionManager.h"
 #include "Utility.h"
+#include "releaseLog.h"
 
 SignoriniCollision::SignoriniCollision(void)
 {
@@ -30,8 +31,10 @@ SignoriniCollision::SignoriniCollision(void)
 
 	TriIndex=NULL;
 	
-	fp=fopen("../DebugLog/ContactModelTime.txt","w");
-	Delta=fopen("../DebugLog/Delta2.txt","w");
+	fp=NULL;
+	Delta = NULL;
+// 	fp=fopen("../DebugLog/ContactModelTime.txt","w");
+// 	Delta=fopen("../DebugLog/Delta2.txt","w");
 }
 
 SignoriniCollision::~SignoriniCollision(void)
@@ -87,8 +90,10 @@ SignoriniCollision::~SignoriniCollision(void)
 		delete [] TriIndex;
 
 
-	fclose(fp);
-	fclose(Delta);
+	if (fp)
+		fclose(fp);
+	if(Delta)
+		fclose(Delta);
 }
 
 void SignoriniCollision::drawVec(Vec3d p1, Vec3d p2)
@@ -102,12 +107,10 @@ void SignoriniCollision::drawVec(Vec3d p1, Vec3d p2)
 
 void SignoriniCollision::drawCollisionInfo()
 {
-
 	for (int i=0; i<distance.size(); i++)
 	{
 		drawVec(distance[i].measuredPointInCylinder, distance[i].collidedTriPoint);
 	}
-
 }
 
 
@@ -622,7 +625,7 @@ bool SignoriniCollision::PotentialCollisionDetection(MyFFD* surf,MyFFD* cont)
 
 
 	if(distance.size()){
-		fprintf(Delta,"%f\n",MaxPenetration);
+		//fprintf(Delta,"%f\n",MaxPenetration);
 		return true;
 	}else{
 		return false;
@@ -858,7 +861,7 @@ bool SignoriniCollision::PotentialCollisionDetectionV2(MyFFD* surf,MyFFD* cont,i
 
 
 	if(distance.size()){
-		fprintf(Delta,"%f\n",MaxPenetration);
+		//fprintf(Delta,"%f\n",MaxPenetration);
 		return true;
 	}else{
 		return false;
@@ -1583,7 +1586,7 @@ void SignoriniCollision::ComputeforcefromComplianceV19(MyFFD* surf,MyFFD* cont)
 	QueryPerformanceCounter(&end);
 	time5=(double)(end.QuadPart-start.QuadPart)/freq.QuadPart*1000;
 
-	fprintf(fp,"%f %f%d\n",time2+time4,time1+time3+time5,nbCollide);
+//	fprintf(fp,"%f %f%d\n",time2+time4,time1+time3+time5,nbCollide);
 
 }
 
@@ -1698,7 +1701,7 @@ void SignoriniCollision::ComputeforceImplicit(MyFFD* surf,MyFFD* cont)
 	QueryPerformanceCounter(&end);
 	time5=(double)(end.QuadPart-start.QuadPart)/freq.QuadPart*1000;
 
-	fprintf(fp,"%f %f %f %f %d\n",time1,time2,time3,time4,nbCollide);
+//	fprintf(fp,"%f %f %f %f %d\n",time1,time2,time3,time4,nbCollide);
 
 }
 
@@ -1806,7 +1809,7 @@ void SignoriniCollision::ComputeforcefromComplianceV20(MyFFD* surf,MyFFD* cont)
 	QueryPerformanceCounter(&end);
 	time5=(double)(end.QuadPart-start.QuadPart)/freq.QuadPart*1000;
 
-	fprintf(fp,"%f %f %f %f %d\n",time1,time2,time3,time4,nbCollide);
+//	fprintf(fp,"%f %f %f %f %d\n",time1,time2,time3,time4,nbCollide);
 
 }
 
@@ -2754,6 +2757,8 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		arrayInt affectedEFGNodes;
 		std::vector<arrayInt>* neighborSurf = object->neighborNodeOfSurfVertice();
 		std::vector<Vec3i>* face=object->surfObj()->face();
+
+
 		for(int i=0;i<nbCollide;i++)
 		{
 			// For catheter
@@ -2776,6 +2781,7 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 				}
 			}
 		}
+
 		// Optimize meshles matrix
 		int nbAffectedNodes = affectedEFGNodes.size();
 		//
@@ -2811,8 +2817,6 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 			}
 		}
 
-
-
 		delete [] mapping;
 
 	//	penetration+=-m1*InternalDis1+m2*InternalDis2;
@@ -2825,12 +2829,19 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 		
 		mcm.set_size(nbCollide,nbCollide); // Do we need this?
 		mcm.fill(0.0);
-		mcm=(m1t*trans(m1t))*C+mm2*trans(m2);
+
+//		mcm=(m1t*trans(m1t))*C+mm2*trans(m2);
+
+		arma::mat tm1t, tm2;
+		tm1t = trans(m1t);
+		tm2 = trans(m2);
+		mcm = Utility::multiplyMat(&m1t, &tm1t)*C + Utility::multiplyMat(&mm2, &tm2);
 
 		//Gauss Seidel 
 		force1=GaussSeidelMethod1(mcm,penetration,Iteration);
 		InternalForce1=-trans(m1)*force1; 
 		InternalForce2+=trans(m2)*force1;
+
 	}
 
 // 	InternalDis2=C2%InternalForce2-_catheter->returnPreDisplacement();
@@ -2860,14 +2871,111 @@ void SignoriniCollision::interactionSimulation( MyFFD* _catheter, Meshfree_GPU* 
 
 	delete [] InternalForce;
 	InternalForce=NULL;
+
 }
 
 bool SignoriniCollision::CollisionDetectionBtwCatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double marginRatio )
 {
+
 	VectorFunc func;
 	Vec3d* Points=_catheter->returnControlPoint();
 	int NbPoint=_catheter->returnNbPoint();
-	
+
+	int InsertedIndex=0;
+	for(int i=0;i<NbPoint;i++)
+		if((Points[i]-_catheter->returnInsertedPoint())*_catheter->returnInsertedDirec()>=0)
+			InsertedIndex=i;
+
+	distance.clear();
+	InspectedTri.clear();
+
+	for (int i=0;i<InsertedIndex;i++)
+	{
+		Vec3d point1 = Points[i];
+		Vec3d point2 = Points[i+1];
+
+		CollisionManager colM;
+		colM.collisionBtwSurfAndLineSeg_part(object->surfObj(),point1,point2,_catheter->returnRadiusOfEndoscope(),marginRatio);
+		std::vector<CollisionManager::Distancefield> distanceM = colM.getDistance();
+		if (distanceM.size()>0)
+		{
+			for (int j=0; j<distanceM.size(); j++)
+			{
+				CollisionManager::Distancefield dColis = distanceM[j];
+
+				SignoriniCollision::Distancefield newDistance;
+				newDistance.triIdx = dColis.triIdx;
+				newDistance.cylinderIdx = i;
+				newDistance.measuredPointInCylinder = dColis.measuredPointInCylinder;
+				newDistance.collidedCylPoint=dColis.collidedCylPoint;
+				newDistance.collidedTriPoint=dColis.collidedTriPoint;
+				newDistance.Distance=dColis.Penetration + _catheter->returnRadiusOfEndoscope();
+				newDistance.PenetratedDirec=dColis.PenetratedDirec;
+				newDistance.Penetration=dColis.Penetration;
+
+				distance.push_back(newDistance);
+				InspectedTri.push_back(dColis.triIdx);
+			}
+		}
+	}
+
+	// string line
+	if(0)
+	{
+		arrayVec3f stringP = _catheter->stringPoint();
+		CollisionManager colM;
+		colM.collisionBtwSurfAndLineSeg_part(object->surfObj(),stringP[0],stringP[1],_catheter->stringRadius(),marginRatio);
+		std::vector<CollisionManager::Distancefield> distanceM = colM.getDistance();
+		if (distanceM.size()>0)
+		{
+			for (int j=0; j<distanceM.size(); j++)
+			{
+				CollisionManager::Distancefield dColis = distanceM[j];
+
+				SignoriniCollision::Distancefield newDistance;
+				newDistance.triIdx = dColis.triIdx;
+				newDistance.cylinderIdx = STRING_INDEX;
+				newDistance.measuredPointInCylinder = dColis.measuredPointInCylinder;
+				newDistance.collidedCylPoint=dColis.collidedCylPoint;
+				newDistance.collidedTriPoint=dColis.collidedTriPoint;
+				newDistance.Distance=dColis.Penetration + _catheter->stringRadius();
+				newDistance.PenetratedDirec=dColis.PenetratedDirec;
+				newDistance.Penetration=dColis.Penetration;
+
+				distance.push_back(newDistance);
+				InspectedTri.push_back(dColis.triIdx);
+			}
+		}
+	}
+
+	//
+
+	func.arrangeVector(InspectedTri);
+	return distance.size()>0;
+}
+
+int SignoriniCollision::PotentialCollideSegment( MyFFD* _catheter, Meshfree_GPU* object )
+{
+	VectorFunc func;
+	Vec3d* Points=_catheter->returnControlPoint();
+	int NbPoint=_catheter->returnNbPoint();
+	AABBNode* root=object->surfObj()->getBVH()->root();
+
+	//Largest index that intersect
+	for (int i=0; i<NbPoint; i++)
+	{
+		
+	}
+
+	return 0;
+}
+
+bool SignoriniCollision::CollisionDetectionBtw1CatheterAndMeshles( MyFFD* _catheter, Meshfree_GPU* object, double marginRatio )
+{
+	VectorFunc func;
+	Vec3d* Points=_catheter->returnControlPoint();
+	int NbPoint=_catheter->returnNbPoint();
+
 	int InsertedIndex=0;
 	for(int i=0;i<NbPoint;i++)
 		if((Points[i]-_catheter->returnInsertedPoint())*_catheter->returnInsertedDirec()>=0)
@@ -2920,20 +3028,4 @@ bool SignoriniCollision::CollisionDetectionBtwCatheterAndMeshles( MyFFD* _cathet
 
 	func.arrangeVector(InspectedTri);
 	return distance.size()>0;
-}
-
-int SignoriniCollision::PotentialCollideSegment( MyFFD* _catheter, Meshfree_GPU* object )
-{
-	VectorFunc func;
-	Vec3d* Points=_catheter->returnControlPoint();
-	int NbPoint=_catheter->returnNbPoint();
-	AABBNode* root=object->surfObj()->getBVH()->root();
-
-	//Largest index that intersect
-	for (int i=0; i<NbPoint; i++)
-	{
-		
-	}
-
-	return 0;
 }
