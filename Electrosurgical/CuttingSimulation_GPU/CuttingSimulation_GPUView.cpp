@@ -148,11 +148,11 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	if (lsChar == 'C')
 	{
-		lineTool.cut8(m_Meshfree.surfObj());
+		lineTool.cut9(m_Meshfree.surfObj());
 	}
 	if (lsChar == 'R')
 	{
-		lineTool.stepDebug8();
+		lineTool.stepDebug9();
 	}
 	if (lsChar == 'E')
 	{
@@ -173,9 +173,9 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		else
 			MessageBox("No file to stl file to convert!!!");
 	}
-	if (lsChar == 'T')
+	if (lsChar == 'S')
 	{
-		lineTool.step2Debug9();
+		lineTool.smoothBoundary();
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
@@ -365,7 +365,10 @@ void CCuttingSimulation_GPUView::DrawView()
 
 void CCuttingSimulation_GPUView::SetupView()
 {
-	glClearColor(0,0,0,0);
+	if (m_displayMode[0])
+		glClearColor(0,0,0,0);
+	else
+		glClearColor(1,1,1,1);
 
 	GLfloat diffuseLight[] = {0.4f,0.4f,0.4f,1.0f};
 	GLfloat ambientLight[] = {0.2f,0.2f,0.2f,1.0f};

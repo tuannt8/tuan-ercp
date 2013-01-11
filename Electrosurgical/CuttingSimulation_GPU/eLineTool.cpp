@@ -24,7 +24,7 @@ void eLineTool::draw( int mode )
 	{
 		Utility::drawFace(s_points, s_faces, &m_collidedTriIdx);
 
-
+		Utility::drawFace(s_points, s_faces, &m_newFIdxs);
 	}
 }
 
@@ -228,7 +228,6 @@ void eLineTool::objTopoModifer(SurfaceObj* surfObj, arrayInt &generatedIdx, arra
 		modifier.removeFace(topo, _removedTriIdx[i]);
 
 		// update affected tri list
-		// For idea 4
 		if (vecFunc.isElementInVector(generatedIdx, rmIdx))
 		{
 			vecFunc.removeElementValue(generatedIdx, rmIdx);
@@ -237,6 +236,19 @@ void eLineTool::objTopoModifer(SurfaceObj* surfObj, arrayInt &generatedIdx, arra
 		if (idx>=0)
 		{
 			generatedIdx[idx] = rmIdx;
+		}
+
+		// Update global list tri
+		{
+			if (vecFunc.isElementInVector(m_newFIdxs, rmIdx))
+			{
+				vecFunc.removeElementValue(m_newFIdxs, rmIdx);
+			}
+			int idx = vecFunc.indexOfElement(m_newFIdxs, changeIdx);
+			if (idx>=0)
+			{
+				m_newFIdxs[idx] = rmIdx;
+			}
 		}
 	}
 
@@ -269,6 +281,9 @@ void eLineTool::objTopoModifer(SurfaceObj* surfObj, arrayInt &generatedIdx, arra
 
 		// Update affected triangle list
 		generatedIdx.push_back(objTris->size()-1);
+
+		// Global cut face
+		m_newFIdxs.push_back(objTris->size()-1);
 	}
 
 	surfObj->updateNormal();
@@ -596,7 +611,7 @@ void eLineTool::stepDebug9()
 	m_collidedTriIdx = generated;
 
 	// remesh the area
-
+	step2Debug9();
 }
 
 
@@ -1183,4 +1198,34 @@ int eLineTool::findObtuseIndex( arrayInt trimmingLoop, arrayInt triArea )
 		return sIdx;
 	}
 	return -1;
+}
+
+void eLineTool::smoothBoundary()
+{
+	arrayVec3f* points = s_points;
+	arrayVec3f* point0 = s_surfObj->point0();
+	arrayVec3i* face = s_faces;
+
+	VectorFunc func;
+	std::vector<arrayInt> allLoops;
+	findBoundaryLoop(s_surfObj->container(), m_newFIdxs, allLoops);
+	arrayInt loops = allLoops[0];
+
+	int nbPoint = loops.size();
+	arrayVec3f newPs;
+	arrayVec3f newPs0;
+	for (int i=0; i<loops.size(); i++)
+	{
+		Vec3f pt = (points->at(loops[(i-1+nbPoint)%nbPoint])+points->at(loops[i])+
+			points->at(loops[(i+1)%nbPoint]))/3;
+		Vec3f pt0 = (point0->at(loops[(i-1+nbPoint)%nbPoint])+point0->at(loops[i])+
+			point0->at(loops[(i+1)%nbPoint]))/3;
+		newPs.push_back(pt);
+		newPs0.push_back(pt0);
+	}
+	for (int i=0; i<loops.size(); i++)
+	{
+		points->at(loops[i])=newPs[i];
+		point0->at(loops[i])=newPs0[i];
+	}
 }
