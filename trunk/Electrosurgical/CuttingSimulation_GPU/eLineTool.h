@@ -19,6 +19,7 @@ public:
 	void draw(int mode);
 	void move(Vec3f m);
 	void resetPath();
+	void smoothBoundary();
 
 	// Idea 8
 	void cut8(SurfaceObj* obj);
@@ -32,7 +33,7 @@ public:
 	void addObtuseTriangle( arrayInt& bound, arrayInt &triArea );
 	int findObtuseIndex( arrayInt bound, arrayInt triArea );
 
-	// Test long cut
+	// idea 9 Test long cut
 	void cut9(SurfaceObj* obj);
 	void stepDebug9();
 	void step2Debug9();
@@ -42,10 +43,14 @@ public:
 	bool isLegalBound( arrayInt loop );
 	void remeshByFlip(arrayInt areaIdx);
 	
+
+
 public:
 	SurfaceObj* s_surfObj;
 	arrayVec3f* s_points;
 	arrayVec3i* s_faces;
+
+	arrayInt m_newFIdxs; // all new face cutting process
 
 	arrayInt m_collidedTriIdx;
 	arrayInt m_bound;
