@@ -105,6 +105,7 @@ public:
 	float* nodeForce(){return NodeForce;};
 	float* nodeMass(){return NodeMass;};
 	float* nodePos0(){return NodePos0;};
+	float supportRadius(){return SupportRadius;};
 	MLSShapeFunc* shapeFunc(){return &ShapeFunc;};
 	AABBTreeEdge* getBVH(){return &BVHAABB;};
 	AABBTreePoint* getBVHPoint(){return &BVHAABBPoint;};

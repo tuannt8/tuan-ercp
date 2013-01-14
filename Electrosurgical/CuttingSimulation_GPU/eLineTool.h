@@ -1,6 +1,10 @@
 #pragma once
 #include "Graphics/surfaceobj.h"
 #include "Modules/CollisionManager.h"
+#include "Modules/Meshfree_GPU.h"
+
+#define MAX 100000000
+#define MIN -100000000
 
 // ID 8
 #define MIN_MOVE_DISTANCE 1
@@ -20,6 +24,8 @@ public:
 	void move(Vec3f m);
 	void resetPath();
 	void smoothBoundary();
+
+	Vec3f invertMappingFunction(Meshfree_GPU *obj, Vec3f curP);
 
 	// Idea 8
 	void cut8(SurfaceObj* obj);
