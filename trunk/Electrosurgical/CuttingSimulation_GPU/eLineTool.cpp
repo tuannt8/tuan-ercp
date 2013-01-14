@@ -1229,3 +1229,116 @@ void eLineTool::smoothBoundary()
 		point0->at(loops[i])=newPs0[i];
 	}
 }
+
+Vec3f eLineTool::invertMappingFunction( Meshfree_GPU *obj, Vec3f curP )
+{
+	EFG_CUDA_RUNTIME *efgObj = obj->efgObj();
+	arrayVec3f* efgNodes = efgObj->nodePosVec();
+	arrayVec3f* efgNode0 = efgObj->nodePos0Vec();
+	float* displace = efgObj->nodeDis();
+	float SupportRadius = efgObj->supportRadius();
+	// Optimization later 
+	// Determine neighbor base on current position
+
+	arrayInt neighborIdx;
+	for (int i=0; i<efgNodes->size(); i++)
+	{
+		if(((*efgNodes)[i] - curP).norm() <SupportRadius)
+		{	
+			neighborIdx.push_back(i);
+		}	
+	}
+
+	// Compute initial solution
+	Vec3f potentialPoint=Vec3f(0,0,0);
+	for (int i=0; i<neighborIdx.size(); i++)
+	{
+		potentialPoint += efgNode0->at(neighborIdx[i]);
+	}
+	potentialPoint = potentialPoint/neighborIdx.size();
+
+	// Loop to find approximate solution
+	// Input is potential Points
+	while(1)
+	{
+		std::vector<float> shapeFuncValue;
+		shapeFuncValue.resize(neighborIdx.size());
+
+		std::vector<float> shapeFuncDrvAtX, shapeFuncDrvAtY, shapeFuncDrvAtZ;
+		shapeFuncDrvAtX.resize(neighborIdx.size());
+		shapeFuncDrvAtY.resize(neighborIdx.size());
+		shapeFuncDrvAtZ.resize(neighborIdx.size());
+
+		// Find shape function and its derivative
+		MLSShapeFunc shapeFunc;
+		shapeFunc.init(efgNode0, SupportRadius, WEIGHT_FUNC_TYPE);
+
+		// Moment matrix - Compute shape function
+		Mat4x4f momentMatrixAtNode, invertMomentMatrix;
+		shapeFunc.computeMomentMatrix(momentMatrixAtNode, neighborIdx, potentialPoint);
+		invertMatrix(invertMomentMatrix, momentMatrixAtNode);
+
+		for (int i =0; i<neighborIdx.size(); i++)
+		{
+			shapeFuncValue[i] = shapeFunc.computeShapeFuncValue(neighborIdx[i], potentialPoint, invertMomentMatrix);
+		}
+
+		// Shape function derivative at X
+		Mat4x4f momentDrvAtX;
+		shapeFunc.computeMomentMatrixDrvX(potentialPoint, momentDrvAtX, neighborIdx);
+		for(unsigned int i=0; i<neighborIdx.size(); i++)
+		{
+			shapeFuncDrvAtX[i] = shapeFunc.computeShapeFuncDrvX(neighborIdx[i], potentialPoint, invertMomentMatrix, momentDrvAtX);
+		}
+
+		// Shape function derivative at Y
+		Mat4x4f momentDrvAtY;
+		shapeFunc.computeMomentMatrixDrvY(potentialPoint, momentDrvAtY, neighborIdx);
+		for(unsigned int i=0; i<neighborIdx.size(); i++)
+		{
+			shapeFuncDrvAtY[i] = shapeFunc.computeShapeFuncDrvX(neighborIdx[i], potentialPoint, invertMomentMatrix, momentDrvAtY);
+		}
+
+		// Shape function derivative at Z
+		Mat4x4f momentDrvAtZ;
+		shapeFunc.computeMomentMatrixDrvY(potentialPoint, momentDrvAtZ, neighborIdx);
+		for(unsigned int i=0; i<neighborIdx.size(); i++)
+		{
+			shapeFuncDrvAtZ[i] = shapeFunc.computeShapeFuncDrvZ(neighborIdx[i], potentialPoint, invertMomentMatrix, momentDrvAtZ);
+		}
+
+		// Now compute error
+		Vec3f a,b;
+		for (int i=0; i<neighborIdx.size(); i++)
+		{
+			int nodeIdx = neighborIdx[i];
+			a[0] += shapeFuncDrvAtX[i]*displace[nodeIdx*DIM];
+			a[1] += shapeFuncDrvAtY[i]*displace[nodeIdx*DIM+1];
+			a[2] += shapeFuncDrvAtZ[i]*displace[nodeIdx*DIM+2];
+
+			b[0] += shapeFuncValue[i]*displace[nodeIdx*DIM];
+			b[1] += shapeFuncValue[i]*displace[nodeIdx*DIM+1];
+			b[2] += shapeFuncValue[i]*displace[nodeIdx*DIM+2];
+		}
+		a[0] += 1; a[1] += 1; a[2] += 1;
+		b[0] = curP[0] - (potentialPoint[0] + b[0]);
+		b[1] = curP[1] - (potentialPoint[1] + b[1]);
+		b[2] = curP[2] - (potentialPoint[2] + b[2]);
+
+		Vec3f dx;
+		for (int i=0; i<3; i++)
+		{
+			ASSERT(abs(a[0])>EPS);
+			dx[i] = b[i]/a[i];
+		}
+
+		potentialPoint = potentialPoint + dx;
+
+		if (dx.norm() < 0.01)
+		{
+			break;
+		}
+	}
+
+	return potentialPoint;
+}

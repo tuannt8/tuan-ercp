@@ -177,6 +177,10 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	{
 		lineTool.smoothBoundary();
 	}
+	if (lsChar == 'T')
+	{
+		Vec3f test = lineTool.invertMappingFunction(&m_Meshfree, Vec3f(0,100,0));
+	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
 		m_displayMode[nChar - 48] = ! m_displayMode[nChar - 48];
@@ -416,10 +420,10 @@ void CCuttingSimulation_GPUView::LiverInit(int res)
 // 	m_Surf.constructAABBTree();
 
 	m_Meshfree.loadSurfObj("../data/liver2194.txt");
-// 	m_Meshfree.generateEFGObj(res, false);
-// 	m_Meshfree.connectSurfAndEFG();
-// 	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
-// 	m_Meshfree.initFixedConstraintGPU();
+	m_Meshfree.generateEFGObj(res, false);
+	m_Meshfree.connectSurfAndEFG();
+	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
+	m_Meshfree.initFixedConstraintGPU();
 // 	m_Tool.initEx2();
 }
 void CCuttingSimulation_GPUView::KidneyInit(int res)
