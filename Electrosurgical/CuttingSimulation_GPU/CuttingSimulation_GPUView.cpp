@@ -9,6 +9,7 @@
 
 #include "stl.h"
 #include "voxel.h"
+#include "Utility.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -148,11 +149,11 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	if (lsChar == 'C')
 	{
-		lineTool.cut9(m_Meshfree.surfObj());
+		lineTool.cut8(m_Meshfree.surfObj());
 	}
 	if (lsChar == 'R')
 	{
-		lineTool.stepDebug9();
+		lineTool.stepDebug8();
 	}
 	if (lsChar == 'E')
 	{
@@ -179,7 +180,11 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	if (lsChar == 'T')
 	{
+		CTimeTick timeTick;
+		timeTick.SetStart();
 		Vec3f test = lineTool.invertMappingFunction(&m_Meshfree, Vec3f(0,100,0));
+		timeTick.SetEnd();
+		Utility::urgentLog("Time: %lf", timeTick.GetTick());
 	}
 	else if (nChar >= 48 && nChar <= 57   )
 	{
@@ -341,10 +346,11 @@ void CCuttingSimulation_GPUView::DrawView()
 	{
 		m_Meshfree.surfObj()->drawPointIdx();
 	}
-// 	if (m_displayMode[4])
-// 	{
-// 		m_Meshfree.drawEFGObj(Vec3f(1,0,0), 2, 0);
-// 	}
+	if (m_displayMode[5])
+	{
+		m_Meshfree.drawEFGObj(Vec3f(1,0,0), 2, 0);
+		m_Meshfree.efgObj()->drawEdge();
+	}
 
 	if (m_displayMode[9])
 	{

@@ -26,6 +26,7 @@ public:
 	void smoothBoundary();
 
 	Vec3f invertMappingFunction(Meshfree_GPU *obj, Vec3f curP);
+	Vec3f invertMappingFunction2(Meshfree_GPU *obj, Vec3f curP);
 
 	// Idea 8
 	void cut8(SurfaceObj* obj);
