@@ -18,10 +18,13 @@ eLineTool::~eLineTool(void)
 
 void eLineTool::draw( int mode )
 {
+	glColor3f(0.3, 0.3 ,0.5);
+
 	if (mode==0)
 		Utility::drawFace(&m_allPoints, &m_face);
 	if (mode ==1)
 	{
+		glColor3f(0, 1 ,0);
 		Utility::drawFace(s_points, s_faces, &m_collidedTriIdx);
 
 		Utility::drawFace(s_points, s_faces, &m_newFIdxs);
@@ -1230,6 +1233,9 @@ void eLineTool::smoothBoundary()
 	}
 }
 
+// Find material coordinate of a new point
+// Base on shape function relative to efg nodes
+// Solution: Newton-Raphson method
 Vec3f eLineTool::invertMappingFunction( Meshfree_GPU *obj, Vec3f curP )
 {
 	EFG_CUDA_RUNTIME *efgObj = obj->efgObj();
@@ -1341,4 +1347,23 @@ Vec3f eLineTool::invertMappingFunction( Meshfree_GPU *obj, Vec3f curP )
 	}
 
 	return potentialPoint;
+}
+
+Vec3f eLineTool::invertMappingFunction2( Meshfree_GPU *obj, Vec3f curP )
+{
+// 	// We do this later if there is a performance problem
+// 
+// 	SurfaceObj* surfObj = obj->surfObj();
+// 	arrayVec3f* surPoints = obj->surfObj()->point();
+// 	AABBTree* BVH = surfObj.getBVH();
+// 	// Take first point
+// 	int point1Idx = 0;
+// 	Vec3f point1 = surPoints->at(point1Idx);
+// 
+// 	// 
+// 	CollisionManager colMng;
+// 	arrayInt triIdxs;
+// 	colMng.collisionBtwAABBAndAxisLine(BVH, point1, curP-point1, triIdxs);
+	
+	return Vec3f();
 }

@@ -80,7 +80,6 @@ void Utility::drawBox( Vec3f leftDown, Vec3f rightUp )
 
 void Utility::drawFace( arrayVec3f* points, arrayVec3i* tris , int mode)
 {
-	glColor3f(0,1,0);
 	glBegin(GL_TRIANGLES);
 	for (int i=0; i<tris->size(); i++)
 	{
@@ -108,7 +107,6 @@ void Utility::drawFace( arrayVec3f* points, arrayVec3i* tris , int mode)
 
 void Utility::drawFace( arrayVec3f* points, arrayVec3i* tris, arrayInt* idxToDraw )
 {
-	glColor3f(0,1,0);
 	glBegin(GL_TRIANGLES);
 	for (int i=0; i<idxToDraw->size(); i++)
 	{
@@ -132,4 +130,27 @@ void Utility::drawFace( arrayVec3f* points, arrayVec3i* tris, arrayInt* idxToDra
 		}
 	}
 	glEnd();
+}
+
+void Utility::urgentLog( char* format, ... )
+{
+	FILE* ff = fopen("../DebugLog/urgentLog.txt", "a+");
+	if(!ff)
+		return;
+
+	va_list args;   //  Variable argument list
+	int len;        // String length
+	int i;          //  Iterator
+	char * text;    // Text
+
+	va_start(args, format);
+	len = _vscprintf(format, args) + 1;
+	text = new char[len];
+	vsprintf_s(text, len, format, args);
+	va_end(args);
+
+	fprintf(ff, text);
+	fprintf(ff, "\n");
+
+	fclose(ff);
 }
