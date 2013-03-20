@@ -655,6 +655,26 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="InteractionModel"
+			>
+			<File
+				RelativePath=".\centerLine.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\centerLine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\wireTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\wireTest.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"
 			>

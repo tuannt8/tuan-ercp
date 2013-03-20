@@ -59,6 +59,21 @@ void Utility::Log( float* arr, int rowSize, int colSize /*= 3*/ )
 	fclose(f);
 }
 
+void Utility::Log( Vec3d* arr, int size , int mode)
+{
+	FILE* f = fopen("../DebugLog/vectorArray.txt", mode==0?"w":"a");
+	fprintf(f, "Number of element: %d\n", size);
+	for (int i = 0; i < size; i++)
+	{
+		for (int j=0; j<3; j++)
+		{
+			fprintf(f, "%lf\t", arr[i][j]);
+		}
+		fprintf(f, "\n");
+	}
+	fclose(f);
+}
+
 void Utility::okMessageBox( char* message )
 {
 //	AfxMessageBox(message, MB_OK|MB_ICONINFORMATION);
