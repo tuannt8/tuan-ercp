@@ -367,8 +367,8 @@ void MyFFD::makeCatheter(double elementLength,double radius, int nb)
 	//make Connectivity
 	NbCon=nb;
 	NbPoint=nb+1;
-	Vec3d direc(-1,0.1,0);direc.normalize();
-	Vec3d Center(150,-90,0);
+	Vec3d direc(1,0,0);direc.normalize();
+	Vec3d Center(0,0,0);
 	direc.normalize();
 
 	normF = Vec3d(0,0,1);
@@ -7306,9 +7306,9 @@ void MyFFD::drawCatheter( int mode )
 		}
 	}
 
-	arrayVec3f stringP = stringPoint();
-	glColor3f(0.7,0.7,0.7);
-	drawCylinder(stringP[0], stringP[1], RadiusOfEndoscope/5);
+// 	arrayVec3f stringP = stringPoint();
+// 	glColor3f(0.7,0.7,0.7);
+// 	drawCylinder(stringP[0], stringP[1], RadiusOfEndoscope/5);
 
 
 	float arrowLength = 10;

@@ -16,6 +16,7 @@ namespace Utility
 	// File
 	void Log(EFG_CUDA_RUNTIME* obj);
 	void Log(float* arr, int rowSize, int colSize = 3);
+	void Log(Vec3d* arr, int size, int mode);// mode 0: over write; mode 1: Append
 
 	void LogMatrix(arma::mat* A, char* fileName="matrix_log.txt");
 

@@ -6,6 +6,8 @@
 #include "LineTool.h"
 #include "textureManager.h"
 #include "catheter.h"
+#include "centerLine.h"
+#include "wireTest.h"
 
 #include "MyFFD.h"
 #include "SignoriniCollision.h"
@@ -135,6 +137,9 @@ protected:
 	//Catheter insertion
 	MyFFD m_catheter1;
 	void renderCatheter();
+
+	centerLine m_centerLine;
+	wireTest m_wireTest;
 
 	SignoriniCollision collisionModel;
 
