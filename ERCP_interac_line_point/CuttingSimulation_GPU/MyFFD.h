@@ -145,6 +145,7 @@ public:
 	/* get data */
 
 	Vec3d* controlPoint(){return ControlPoint;};
+	Vec3d* velocity(){return Velocity;}
 
 
 	Vec3d paraToSurfacePoint(int centerIdx, int circualrIdx, double u, double v, double w);
@@ -301,6 +302,7 @@ public:
 
 	void updateEndoscopeExplicit(double dt,Vec3d Gravity);
 	void updateCatheterExplicit(Vec3d gravity, mat* contactForce = NULL);
+	void updateCatheterExplicit(Vec3d gravity, arrayVec3f* contactForce);
 
 	mat returnEndoscopeTipDisplacement(){return EndoscopeTipDisplacement;EndoscopeTipDisplacement.fill(0.0);};
 

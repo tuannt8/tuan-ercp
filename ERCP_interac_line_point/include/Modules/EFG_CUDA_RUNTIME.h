@@ -133,6 +133,8 @@ public:
 	float** returnPreDis_CUDA(float dt, int itter);
 	float** returnDis(float dt, int itter);
 
+
+	void addConstraintIdx( arrayInt fixIdxs );
 private:
 	float norm(float* a, float* b, int dim);
 
