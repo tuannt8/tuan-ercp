@@ -242,7 +242,7 @@ void Meshfree_GPU::updateSurfPosition()
 		}
 	}
 	SurfObj->updatePoint();
-	SurfObj->updateBVH();
+//	SurfObj->updateBVH();
 }
 
 

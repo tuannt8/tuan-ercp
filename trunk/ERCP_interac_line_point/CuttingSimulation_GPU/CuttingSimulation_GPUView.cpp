@@ -144,14 +144,14 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	m_centerLine.init();
 	m_wireTest.init();
 
-// 	majorPapillaInit();
+ 	majorPapillaInit();
 // 
 	float M2=100;			//mass
 	float ks2=100000;		// Spring constant
-	float kt= 50000;		// bending constant
+	float kt= 10000;		// bending constant
 	float C2=0.01*ks2;	// Spring damping
-	float Cb=0.01*kt;	// bending damping
-	float Ed2=300;		// viscous friction
+	float Cb=0.1*kt;	// bending damping
+	float Ed2=500;		// viscous friction
 
 	float RadiusofEndsocope=8;
 	float LengthofElement=RadiusofEndsocope*2*6/3;
@@ -369,14 +369,33 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 
 
 	float dt=0.01;
-	int n=10;
+	int n=30;
 
 	if(START)
 	{
-		m_centerLine.interactWithWire(m_wireTest.m_points, m_wireTest.m_velocity, 0, m_wireTest.m_radius);
+		//m_centerLine.interactWithWire(m_wireTest.m_points, m_wireTest.m_velocity, 0, m_wireTest.m_radius);
+
+		arrayVec3f points, velocity;
+		Vec3d* catheP = m_catheter1.controlPoint();
+		Vec3d* veloc = m_catheter1.velocity();
+		for (int i=0; i<m_catheter1.returnNbPoint(); i++)
+		{
+			points.push_back(catheP[i]);
+			velocity.push_back(veloc[i]);
+		}
+
+		arrayVec3f forceToCatheter;
+		forceToCatheter.resize(points.size());
+
+		m_centerLine.interactWithWire(points, velocity, 0, m_catheter1.returnRadiusOfEndoscope(), &forceToCatheter);
 		m_centerLine.deform(dt);
 
-		m_catheter1.updateCatheterExplicit(Vec3d(0,-1,0));
+		m_catheter1.updateCatheterExplicit(Vec3d(0,-1,0), &forceToCatheter);
+
+		m_Meshfree.efgObj()->updatePositionExplicit(dt/n,n);
+		//Constrain node
+		m_centerLine.updateMeshlessContraint();
+		m_Meshfree.updateSurfPosition();
 	}
 
 	InvalidateRect(NULL, FALSE);
@@ -436,13 +455,25 @@ void CCuttingSimulation_GPUView::DrawView()
 	DrawText();
 	drawDebug();
 
+	if (m_displayMode[1])
+		m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
+	if (m_displayMode[2])
+		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
+
 	m_catheter1.drawCatheter(1);
 	if (!m_displayMode[3])
 	{
 		m_catheter1.drawCatheter(2);
 	}
 
+	if (!m_displayMode[6])
+	{
+		m_Meshfree.drawEFGObj(Vec3f(1,0,0),1.0,0);
+		m_centerLine.drawNodeContraint();
+	}
+
 //	m_wireTest.draw(1);
+
 	m_centerLine.draw(1);
 	m_centerLine.drawCollison();
 
@@ -474,8 +505,8 @@ void CCuttingSimulation_GPUView::SetupView()
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glEnable(GL_LIGHT0);
 
-	//glFrontFace(GL_CCW);
-	glFrontFace(GL_CW);
+//	glFrontFace(GL_CCW);
+	//glFrontFace(GL_CW);
 	glShadeModel(GL_SMOOTH); 
 	glPolygonMode(GL_FRONT, GL_FILL);
 }
@@ -594,22 +625,16 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 //	m_Meshfree.loadSurfObj("../data/mp_lowRes.txt");
 	m_Meshfree.loadSurfObj("../data/mp_3.txt");
-	
 //	m_Meshfree.loadSurfObj("../data/liver2194.txt");
 
-// 	m_Meshfree.generateEFGObj(5, false);
-// 	m_Meshfree.connectSurfAndEFG();
-// 	m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
-// //	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
-// 	m_Meshfree.initFixedConstraintGPU();
-// 
-// 
-// 	//m_lineTool.init(Vec3f(200,0,-200), Vec3f(200,0,200));
-// 	m_lineTool.init(Vec3f(0,0,0), Vec3f(0,100,0));
-// 
-// 	m_catheter.init(Vec3f(300,0,50));
-// 	m_catheter.adjustStringLength(-10);
-// 	m_catheter.rotate(-0.9);
+	m_Meshfree.generateEFGObj(8, false);
+	m_Meshfree.connectSurfAndEFG();
+	m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
+//	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
+	m_centerLine.constraintModel(m_Meshfree.efgObj());
+
+	m_Meshfree.initFixedConstraintGPU();
+
 }
 
 void CCuttingSimulation_GPUView::textureTest()

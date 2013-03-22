@@ -19,9 +19,19 @@ void centerLine::init()
 	// Mass point
 	float length = 100.0;
 	arrayVec3f points;
-	points.push_back(Vec3f(0,0,0));
-	points.push_back(Vec3f(length,0,0));
-	points.push_back(Vec3f(2*length,length,0));
+// 	points.push_back(Vec3f(0,0,0));
+// 	points.push_back(Vec3f(length,0,0));
+// 	points.push_back(Vec3f(2*length,length,0));
+// 	points.push_back(Vec3f(2*length,2*length,0));
+// 	points.push_back(Vec3f(2*length,3*length,0));
+// 	points.push_back(Vec3f(2*length,4*length,0));
+
+	points.push_back(Vec3f(30,-30,7));
+// 	points.push_back(Vec3f(28,0,13));
+// 	points.push_back(Vec3f(22,18,13));
+	points.push_back(Vec3f(-1,44,14));
+	points.push_back(Vec3f(-30,50,14));
+	points.push_back(Vec3f(-30,100,14));
 
 	// Info
 	m_NbPoints = points.size();
@@ -127,7 +137,8 @@ void centerLine::addInternalSpringForce()
 	}
 }
 
-void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocity, int _insideIdx, float radius )
+void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocity, int _insideIdx, 
+								  float radius , arrayVec3f* forceToWire)
 {
 	// Point is indexed from 0: tip of the wire
 	// insideIdx mark a point in wire points. This point is last point the lie inside hole
@@ -165,7 +176,7 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 		collisionPtArray.push_back(newCollid);
 	
 		// Force info
-		float holeRadius = 10;
+		float holeRadius = C_HOLE_RADIUS;
 		float normalForce = computeNormalForce((pt-pointOnSegment).norm(), radius, holeRadius);
 		float fricton = computeFriction(normalForce, radius, holeRadius);
 
@@ -186,6 +197,10 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 		}
 
 		// Store force to wire points
+		if (forceToWire)
+		{
+			forceToWire->at(i) += contactForce;
+		}
 
 		// Distribute force to center points
 		float segLenght = (m_points[idx+1]-m_points[idx]).norm();
@@ -196,7 +211,7 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 
 float centerLine::computeNormalForce( float distance, float wireRadius, float holeRadius )
 {
-	float k= 1000;
+	float k= C_normFactor;
 
 	if (holeRadius < wireRadius)
 	{
@@ -210,15 +225,15 @@ float centerLine::computeNormalForce( float distance, float wireRadius, float ho
 
 float centerLine::computeFriction( float normalForce, float wireRadius, float holeRadius )
 {
-	float k = 0.1; // Friction factor
-	float kTighten = 100;
+	float k = C_friction; // Friction factor
+	float kTighten = C_tighten;
 	if (holeRadius > wireRadius)
 	{
 		return k*normalForce;
 	}
 	else
 	{
-		return k*normalForce + kTighten*(1-wireRadius/holeRadius);
+		return k*normalForce + kTighten*(1-holeRadius/wireRadius);
 	}
 }
 
@@ -277,6 +292,93 @@ void centerLine::drawCollison()
 		glVertex3f(pt2[0], pt2[1], pt2[2]);
 	}
 	glEnd();
+}
+
+void centerLine::constraintModel( EFG_CUDA_RUNTIME* object )
+{
+	efgObj = object;
+	arrayVec3f* nodePos = efgObj->nodePos0Vec();
+
+	// Currently we use only 1 segment for 
+	// Optimize later
+	arrayInt fixIdxs;
+	for (int i=0; i<efgObj->nbNode(); i++)
+	{
+		if (isPointInCylinder((*nodePos)[i], m_points[0], m_points[1], 2*C_HOLE_RADIUS))
+		{
+			GeometricFunc func;
+			Vec3f pointOnSeg;
+			func.distanceBtwPointAndLine((*nodePos)[i], m_points[0], m_points[1], &pointOnSeg);
+
+			float coord = (pointOnSeg-m_points[1]).norm() / (m_points[1]-m_points[0]).norm();
+			Vec3f v = (*nodePos)[i] - pointOnSeg;
+			pointConstraint newConstraint(i, 0, coord, v);
+			constraintPoints.push_back(newConstraint);
+			fixIdxs.push_back(i);
+		}
+	}
+
+//	efgObj->addConstraintIdx(fixIdxs);
+	// This is 2nd BC condition (Constraint position, not 1BC condition)???
+}
+
+void centerLine::updateMeshlessContraint()
+{
+	arrayVec3f* nodePos0 = efgObj->nodePos0Vec();
+	arrayVec3f* nodePos = efgObj->nodePosVec();
+
+	float* nodeDis = efgObj->nodeDis();
+
+	for (int i=0; i<constraintPoints.size(); i++)
+	{
+		pointConstraint curC = constraintPoints[i];
+		Vec3f newPos = (m_points[0]*curC.lineCoord + m_points[1]*(1-curC.lineCoord)) + curC.directionVector;
+
+		Vec3f displacement = newPos - (*nodePos0)[curC.nodeIdx];
+
+		nodeDis[curC.nodeIdx*3] = displacement[0];
+		nodeDis[curC.nodeIdx*3+1] = displacement[1];
+		nodeDis[curC.nodeIdx*3+2] = displacement[2];
+	}
+}
+
+bool centerLine::isPointInCylinder( Vec3f pt, Vec3f c1, Vec3f c2, float radius )
+{
+	Vec3f c12 = c2-c1;
+	float length = c12.norm();
+	c12.normalize();
+	Vec3f p1t = pt-c1;
+
+	if ((p1t.cross(c12)).norm() < radius 
+		&& p1t*c12 < length
+		&& p1t*c12 > 0)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void centerLine::drawNodeContraint()
+{
+	if (!efgObj)
+		return;
+
+	GLUquadricObj *qobj = 0;
+	qobj = gluNewQuadric();
+
+	arrayVec3f* NodePosVec = efgObj->nodePosVec();
+
+	for(int i=0;i<constraintPoints.size();i++)
+	{
+		glColor3f(0,0,1);
+		glPushMatrix();
+		glTranslatef((GLfloat)(*NodePosVec)[constraintPoints[i].nodeIdx][0],
+			(GLfloat)(*NodePosVec)[constraintPoints[i].nodeIdx][1],
+			(GLfloat)(*NodePosVec)[constraintPoints[i].nodeIdx][2]);
+		gluSphere(qobj,1.2,20,20);
+		glPopMatrix();
+	}
 }
 
 

@@ -1,5 +1,7 @@
 #include "StdAfx.h"
+#include "Utility.h"
 #include "MyFFD.h"
+
 
 MyFFD::MyFFD(void)
 {
@@ -367,8 +369,8 @@ void MyFFD::makeCatheter(double elementLength,double radius, int nb)
 	//make Connectivity
 	NbCon=nb;
 	NbPoint=nb+1;
-	Vec3d direc(1,0,0);direc.normalize();
-	Vec3d Center(0,0,0);
+	Vec3d direc(-1,1,0);direc.normalize();
+	Vec3d Center(80,-100,5);
 	direc.normalize();
 
 	normF = Vec3d(0,0,1);
@@ -5987,6 +5989,32 @@ void MyFFD::InsertEndoscope(double dv)
 		if((ControlPoint[i]-InsertedPoint)*InsertedDirec>=0)
 			InsertedIndex=i;
 
+	if(InsertedIndex==NbPoint-1)
+	{
+		ControlPoint[NbPoint-1]+=InsertedDirec*dv;
+		ControlPoint[NbPoint-2]+=InsertedDirec*dv;
+	}else{
+		for(int i=InsertedIndex;i<NbPoint;i++){
+			ControlPoint[i]+=InsertedDirec*dv;
+		}	
+	}
+
+	for (unsigned int i=0;i<FixedConstraint.size();i++)
+		for (int j=0;j<3;j++)
+			ControlPoint[FixedConstraint[i]]+=InsertedDirec*dv;
+
+	return;
+	//////////////////////////////////////////////////////////////////////////
+
+// 	int InsertedIndex=0;
+// 	for(int i=0;i<NbPoint;i++){
+// 		ControlPoint0[i]+=InsertedDirec*dv;
+// 	}
+// 
+// 	for(int i=0;i<NbPoint;i++)
+// 		if((ControlPoint[i]-InsertedPoint)*InsertedDirec>=0)
+// 			InsertedIndex=i;
+// 
 // 	if(InsertedIndex==NbPoint-1)
 // 	{
 // 		ControlPoint[NbPoint-1]+=InsertedDirec*dv;
@@ -5996,14 +6024,14 @@ void MyFFD::InsertEndoscope(double dv)
 // 			ControlPoint[i]+=InsertedDirec*dv;
 // 		}	
 // 	}
-
-	for(int i=0;i<NbPoint;i++){
-		ControlPoint[i]+=InsertedDirec*dv;
-	}	
-
-	for (unsigned int i=0;i<FixedConstraint.size();i++)
-		for (int j=0;j<3;j++)
-			ControlPoint[FixedConstraint[i]]+=InsertedDirec*dv;
+// 
+// 	for(int i=0;i<NbPoint;i++){
+// 		ControlPoint[i]+=InsertedDirec*dv;
+// 	}	
+// 
+// 	for (unsigned int i=0;i<FixedConstraint.size();i++)
+// 		for (int j=0;j<3;j++)
+// 			ControlPoint[FixedConstraint[i]]+=InsertedDirec*dv;
 	
 }
 
@@ -7321,6 +7349,88 @@ void MyFFD::drawCatheter( int mode )
 	glEnd();
 }
 
+
+void MyFFD::updateCatheterExplicit( Vec3d gravity, arrayVec3f* contactForce)
+{
+	//////////////////////////
+	/* Implicit integration */
+	//////////////////////////
+
+	int InsertedIndex=0;
+
+	/* add gravity */
+	for(int i=0;i<NbPoint;i++)
+	{
+		Force[i]+=gravity*Mass;
+	}
+
+	// add contact force
+	if (contactForce)
+	{
+		for(int i=0;i<NbPoint;i++)
+			Force[i]+=contactForce->at(i);
+// 			for (int j=0; j<3;j++)
+// 				Force[i][j]+=contactForce->at(i);
+	}
+
+
+	// sol2: add benddind to 0-1
+// 	Vec3d l10 = ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]];
+// 	Vec3d radius = normF.cross(l10); radius.normalize();
+// 
+// 	double Lc = (ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]]).norm();
+// 	double lForce = 10000*(Lc-L0);
+// 
+// 	Force[1] += radius*lForce;
+// 	Force[3] -= radius*lForce*2;
+// 	Force[5] += radius*lForce;
+	
+	/* add internal force */
+	m_Spring.addForce(Force,ControlPoint,Velocity);
+
+	/* add Bending force */
+	addBendingForce();
+
+	/* add environment damping force */
+	for(int i=0;i<NbPoint;i++)
+		Force[i]-=Velocity[i]*Ed;
+
+	//////////////////////////
+	/* Explicit integration */
+	//////////////////////////
+
+	for(int i=0;i<NbPoint;i++)
+		if((ControlPoint[i]-InsertedPoint)*InsertedDirec>=0)
+			InsertedIndex=i;
+
+
+	for(int i=0;i<NbPoint;i++)
+	{
+		Vec3d dv=Force[i]/Mass*dt;
+		Velocity[i]+=dv;
+		ControlPoint[i]+=(Velocity[i]*dt);
+	}
+
+
+	//Constraints
+	
+
+	if(InsertedIndex==NbPoint-1)
+	{
+		ControlPoint[(NbPoint-2)]=ControlPoint0[(NbPoint-2)];
+		ControlPoint[(NbPoint-1)]=ControlPoint0[(NbPoint-1)];
+	}else{
+		for(int i=InsertedIndex;i<NbPoint;i++)
+			ControlPoint[i]=ControlPoint0[i];	
+	}
+	/*for (int i=0;i<FixedConstraint.size();i++)
+		ControlPoint[FixedConstraint[i]]=ControlPoint0[FixedConstraint[i]];*/
+
+
+	for(int i=0;i<NbPoint;i++)
+		Force[i].clear();
+}
+
 void MyFFD::updateCatheterExplicit( Vec3d gravity, mat* contactForce)
 {
 	//////////////////////////
@@ -7332,7 +7442,7 @@ void MyFFD::updateCatheterExplicit( Vec3d gravity, mat* contactForce)
 	/* add gravity */
 	for(int i=0;i<NbPoint;i++)
 	{
-		Force[i]+=gravity;
+		Force[i]+=gravity*Mass;
 	}
 
 	// add contact force
@@ -7343,35 +7453,17 @@ void MyFFD::updateCatheterExplicit( Vec3d gravity, mat* contactForce)
 				Force[i][j]+=contactForce->at(i*3+j);
 	}
 
-	//constrain by electric line
-	//Solution 1: add spring btw 1 and 6
-// 	Vec3d l16 = ControlPoint[6]-ControlPoint[1]; l16.normalize();
-// 	double _force = 0.6*m_Spring.getSpringForce(0, ControlPoint, Velocity);
-// 	{//0-2
-// 		Vec3d l20 = ControlPoint[0]-ControlPoint[2]; l20.normalize();
-// 		Vec3d radius = normF.cross(l20); radius.normalize();
-// 		double ff = (l20.cross(l16)).norm()*_force;
-// 		Force[0]+=radius*ff;
-// 		Force[2]-=radius*ff;
-// 	}
-// 	{//5-7
-// 		Vec3d l75 = ControlPoint[5]-ControlPoint[7]; l75.normalize();
-// 		Vec3d radius = normF.cross(l75); radius.normalize();
-// 		double ff = (l75.cross(l16)).norm()*_force;
-// 		Force[7]+=radius*ff;
-// 		Force[5]-=radius*ff;
-// 	}
 
 	// sol2: add benddind to 0-1
-	Vec3d l10 = ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]];
-	Vec3d radius = normF.cross(l10); radius.normalize();
-
-	double Lc = (ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]]).norm();
-	double lForce = 10000*(Lc-L0);
-
-	Force[1] += radius*lForce;
-	Force[3] -= radius*lForce*2;
-	Force[5] += radius*lForce;
+// 	Vec3d l10 = ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]];
+// 	Vec3d radius = normF.cross(l10); radius.normalize();
+// 
+// 	double Lc = (ControlPoint[stringPointIdx[1]]-ControlPoint[stringPointIdx[0]]).norm();
+// 	double lForce = 10000*(Lc-L0);
+// 
+// 	Force[1] += radius*lForce;
+// 	Force[3] -= radius*lForce*2;
+// 	Force[5] += radius*lForce;
 	
 	/* add internal force */
 	m_Spring.addForce(Force,ControlPoint,Velocity);

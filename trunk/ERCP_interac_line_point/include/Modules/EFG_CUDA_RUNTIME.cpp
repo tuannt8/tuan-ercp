@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "EFG_CUDA_RUNTIME.h"
 #include "CollisionManager.h"
+#include "Utility.h"
 
 extern "C" void d_initGPU(int nbNode, int nbNodeAdded, float* nodeVolume, float* nodePos0, float* nodePos, float* nodeVel, int nbNodeInside);
 extern "C" void d_initStressPoint(int nbStress, float* stressVolume, float* stressPos0, float* stressPos);
@@ -1141,6 +1142,15 @@ void EFG_CUDA_RUNTIME::draw(Vec3f color, int radius, int mode)
 		GLUquadricObj *qobj = 0;
 		qobj = gluNewQuadric();
 
+		for(int i=0;i<FixedNodeIdx.size();i++)
+		{
+			glColor3f(0,1,0);
+			glPushMatrix();
+			glTranslatef((GLfloat)(*NodePosVec)[FixedNodeIdx[i]][0],(GLfloat)(*NodePosVec)[FixedNodeIdx[i]][1],(GLfloat)(*NodePosVec)[FixedNodeIdx[i]][2]);
+			gluSphere(qobj,radius*1.2,20,20);
+			glPopMatrix();
+		}
+
 		for(int i=0;i<NodePosVec->size();i++)
 		{
 			glColor3f(color[0],color[1],color[2]);
@@ -1150,14 +1160,6 @@ void EFG_CUDA_RUNTIME::draw(Vec3f color, int radius, int mode)
 			glPopMatrix();
 		}
 
-		for(int i=0;i<FixedNodeIdx.size();i++)
-		{
-			glColor3f(1,0,0);
-			glPushMatrix();
-			glTranslatef((GLfloat)(*NodePosVec)[FixedNodeIdx[i]][0],(GLfloat)(*NodePosVec)[FixedNodeIdx[i]][1],(GLfloat)(*NodePosVec)[FixedNodeIdx[i]][2]);
-			//gluSphere(qobj,radius*1.2,20,20);
-			glPopMatrix();
-		}
 	}
 	if(mode==1)
 	{
@@ -1401,12 +1403,13 @@ void EFG_CUDA_RUNTIME::updatePositionExplicit(float dt, int itter)
 		}
 
 	}
+
 	for(int i=0;i<NbNode;i++)
 	{
 		for(int j=0;j<3;j++)
 			(*NodePosVec)[i][j]=NodePos[i*3+j];
 	}
-	BVHAABB.updateAABBTreeBottomUp();
+//	BVHAABB.updateAABBTreeBottomUp();
 }
 
 
@@ -2278,4 +2281,9 @@ float** EFG_CUDA_RUNTIME::returnPreDisNoDeform()
 	}
 
 	return &NodePreDis;
+}
+
+void EFG_CUDA_RUNTIME::addConstraintIdx( arrayInt fixIdxs )
+{
+	FixedNodeIdx.insert(FixedNodeIdx.end(), fixIdxs.begin(), fixIdxs.end());
 }
