@@ -144,9 +144,11 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	m_centerLine.init();
 	m_wireTest.init();
 
+	m_bMeshLess = FALSE;
+
  	majorPapillaInit();
 // 
-	float M2=100;			//mass
+	float M2=50;			//mass
 	float ks2=100000;		// Spring constant
 	float kt= 10000;		// bending constant
 	float C2=0.01*ks2;	// Spring damping
@@ -392,10 +394,14 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 
 		m_catheter1.updateCatheterExplicit(Vec3d(0,-1,0), &forceToCatheter);
 
-		m_Meshfree.efgObj()->updatePositionExplicit(dt/n,n);
-		//Constrain node
-		m_centerLine.updateMeshlessContraint();
-		m_Meshfree.updateSurfPosition();
+		if (m_bMeshLess)
+		{
+			m_Meshfree.efgObj()->updatePositionExplicit(dt/n,n);
+			//Constrain node
+			m_centerLine.updateMeshlessContraint();
+			m_Meshfree.updateSurfPosition();
+		}
+
 	}
 
 	InvalidateRect(NULL, FALSE);
@@ -455,10 +461,19 @@ void CCuttingSimulation_GPUView::DrawView()
 	DrawText();
 	drawDebug();
 
-	if (m_displayMode[1])
-		m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
-	if (m_displayMode[2])
-		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
+	if (m_bMeshLess)
+	{
+		if (m_displayMode[1])
+			m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
+		if (m_displayMode[2])
+			m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
+
+		if (!m_displayMode[6])
+		{
+			m_Meshfree.drawEFGObj(Vec3f(1,0,0),1.0,0);
+			m_centerLine.drawNodeContraint();
+		}
+	}
 
 	m_catheter1.drawCatheter(1);
 	if (!m_displayMode[3])
@@ -466,16 +481,15 @@ void CCuttingSimulation_GPUView::DrawView()
 		m_catheter1.drawCatheter(2);
 	}
 
-	if (!m_displayMode[6])
-	{
-		m_Meshfree.drawEFGObj(Vec3f(1,0,0),1.0,0);
-		m_centerLine.drawNodeContraint();
-	}
 
 //	m_wireTest.draw(1);
 
 	m_centerLine.draw(1);
 	m_centerLine.drawCollison();
+	if (!m_displayMode[4])
+	{
+		m_centerLine.draw(2);
+	}
 
 	glPopMatrix();
 	glPopAttrib();
@@ -493,7 +507,7 @@ void CCuttingSimulation_GPUView::SetupView()
 	GLfloat specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
 	glEnable(GL_DEPTH_TEST);                                        
-//	glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//	glEnable(GL_BLEND);
 
@@ -505,7 +519,7 @@ void CCuttingSimulation_GPUView::SetupView()
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glEnable(GL_LIGHT0);
 
-//	glFrontFace(GL_CCW);
+	glFrontFace(GL_CCW);
 	//glFrontFace(GL_CW);
 	glShadeModel(GL_SMOOTH); 
 	glPolygonMode(GL_FRONT, GL_FILL);
@@ -627,13 +641,16 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 	m_Meshfree.loadSurfObj("../data/mp_3.txt");
 //	m_Meshfree.loadSurfObj("../data/liver2194.txt");
 
-	m_Meshfree.generateEFGObj(8, false);
-	m_Meshfree.connectSurfAndEFG();
-	m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
-//	m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
-	m_centerLine.constraintModel(m_Meshfree.efgObj());
+	if (m_bMeshLess)
+	{
+		m_Meshfree.generateEFGObj(8, false);
+		m_Meshfree.connectSurfAndEFG();
+		m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
+		m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
+		m_centerLine.constraintModel(m_Meshfree.efgObj());
 
-	m_Meshfree.initFixedConstraintGPU();
+		m_Meshfree.initFixedConstraintGPU();
+	}
 
 }
 

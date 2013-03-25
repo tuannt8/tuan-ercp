@@ -140,6 +140,7 @@ protected:
 
 	centerLine m_centerLine;
 	wireTest m_wireTest;
+	BOOL m_bMeshLess;
 
 	SignoriniCollision collisionModel;
 

@@ -1,0 +1,7 @@
+
+Interaction model of catheter and meshless model of papilla
+
+25/03:
+	- finish interaction of catheter <-> center line
+	- Finish interaction of centerline <-> meshless model
+	

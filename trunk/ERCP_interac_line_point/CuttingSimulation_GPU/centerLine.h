@@ -10,7 +10,7 @@
 #define C_Kr 10000				// Restore spring constant
 #define C_Ba 1000				// Air damping
 #define C_MASS 100
-#define C_HOLE_RADIUS 6
+#define C_HOLE_RADIUS 20
 
 // Collision parameters
 #define C_normFactor	10000	// Normal coefficient
@@ -19,7 +19,7 @@
 
 struct collisionInfo
 {
-
+	int type;			//0 -> wire point; 1 -> centerline point
 	int pWireIdx;		// Index of point in insert wire
 	int segmentIdx;		// Index of segment of centerline
 	Vec3d wirePoint;	// Position of point in inserting wire
@@ -63,7 +63,7 @@ public:
 	void draw(int mode);
 	void drawCollison();
 	void drawNodeContraint();
-
+	void drawCylinder( Vec3f a, Vec3f b, float radius, float radius2 );
 
 	// with meshless model
 	void constraintModel(EFG_CUDA_RUNTIME* object);
@@ -83,6 +83,7 @@ public:
 	// Temporal variable - interact with catheter
 	void detectInsertionIdx(arrayVec3f wirePoints);
 	bool isPointInCylinder( Vec3f pt, Vec3f c1, Vec3f c2, float radius );
+
 	float force;
 	arrayVec3f m_interactionForce;
 	std::vector<collisionInfo> collisionPtArray;
