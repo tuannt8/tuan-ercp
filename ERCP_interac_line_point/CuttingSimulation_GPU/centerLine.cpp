@@ -30,8 +30,8 @@ void centerLine::init()
 // 	points.push_back(Vec3f(28,0,13));
 // 	points.push_back(Vec3f(22,18,13));
 	points.push_back(Vec3f(-1,44,14));
-	points.push_back(Vec3f(-30,50,14));
-	points.push_back(Vec3f(-30,100,14));
+	points.push_back(Vec3f(-50,50,14));
+	points.push_back(Vec3f(-50,150,14));
 
 	// Info
 	m_NbPoints = points.size();
@@ -44,7 +44,8 @@ void centerLine::init()
 
 void centerLine::draw( int mode )
 {
-	if (mode == 1) // draw line only
+	if (mode == 1
+		|| mode == 2) // draw line only
 	{
 		glColor3f(1,0,0);
 		glBegin(GL_LINES);
@@ -54,10 +55,7 @@ void centerLine::draw( int mode )
 			glVertex3f(m_points[i+1][0], m_points[i+1][1], m_points[i+1][2]);
 		}
 		glEnd();
-	}
 
-	if (mode == 1)
-	{
 		glColor3f(0,1,0);
 		glPointSize(4.0);
 		glBegin(GL_POINTS);
@@ -67,6 +65,37 @@ void centerLine::draw( int mode )
 		}
 		glEnd();
 	}
+
+	if (mode == 2)
+	{
+		glFrontFace(GL_CW);
+		for (int i=0; i<m_points.size()-1; i++)
+		{
+			drawCylinder(m_points[i], m_points[i+1], C_HOLE_RADIUS, C_HOLE_RADIUS);
+		}
+		glFrontFace(GL_CCW);
+	}
+}
+
+void centerLine::drawCylinder( Vec3f a, Vec3f b, float radius, float radius2 )
+{
+	// This is the default direction for the cylinders to face in OpenGL
+	Vec3f z = Vec3f(0,0,1);         
+	// Get diff between two points you want cylinder along
+	Vec3f p = (a - b);                               
+	// Get CROSS product (the axis of rotation)
+	Vec3f t = z.cross(p); 
+
+	// Get angle. LENGTH is magnitude of the vector
+	double angle = 180 / PI * acos (z*p/ p.norm());
+
+	glPushMatrix();
+	glTranslated(b[0],b[1],b[2]);
+	glRotated(angle,t[0],t[1],t[2]);
+
+	GLUquadricObj *quadratic = gluNewQuadric();
+	gluCylinder(quadratic, radius2==0?radius:radius2, radius, p.norm(), 10, 5);
+	glPopMatrix();
 }
 
 void centerLine::deform( float dt )
@@ -152,17 +181,18 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 	}
 
 	// Corresponding collision pair
+	// Wire nodes <-> centerline segment
 	for (int i=0; i<= insideIdx; i++)
 	{
 		// Optimize later
 		Vec3d pt = wirePoints[i];
 		int idx=-1; float nearest = 9999;
-		for (int i=0; i<m_points.size()-1; i++)
+		for (int j=0; j<m_points.size()-1; j++)
 		{
-			float distance = (pt - (m_points[i]+m_points[i+1])/2).norm();
+			float distance = (pt - (m_points[j]+m_points[j+1])/2).norm();
 			if (nearest > distance)
 			{
-				idx = i;
+				idx = j;
 				nearest = distance;
 			}
 		}
@@ -179,6 +209,12 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 		float holeRadius = C_HOLE_RADIUS;
 		float normalForce = computeNormalForce((pt-pointOnSegment).norm(), radius, holeRadius);
 		float fricton = computeFriction(normalForce, radius, holeRadius);
+
+		if (i==0 && 
+			(pointOnSegment-m_points[0]).norm() < 30)
+		{
+			fricton += 30000;
+		}
 
 		Vec3d contactForce = Vec3d();
 		Vec3d normDirec = pointOnSegment - pt;
@@ -207,6 +243,77 @@ void centerLine::interactWithWire( arrayVec3f wirePoints, arrayVec3f wireVelocit
 		m_Force[idx] -= contactForce*((m_points[idx+1]-pointOnSegment).norm()/segLenght);
 		m_Force[idx+1] -= contactForce*((m_points[idx]-pointOnSegment).norm()/segLenght);
 	}
+
+	// Centerline nodes <-> wire segment
+	for (int i=0; i<=insideIdx; i++)
+	{
+		ASSERT(i+1 < wirePoints.size());
+		Vec3f pt1 = wirePoints[i]; 
+		Vec3f pt2 = wirePoints[i+1];
+
+		int idx = -1;
+		float shortestDis = 9999;
+		Vec3f pCollide;
+		for (int j=0; j<m_points.size(); j++)
+		{
+			GeometricFunc func;
+			Vec3f col;
+			float dis = func.distanceBtwPointAndLine(m_points[j], pt1, pt2, &col);
+
+			if (!func.isPointInLine(pt1, pt2, col))
+			{
+
+				continue;
+			}
+
+			if (dis < shortestDis)
+			{
+				shortestDis = dis;
+				idx = j;
+				pCollide = col;
+			}
+		}
+		if (idx==-1)
+		{
+			continue;
+		}
+
+		// Collision info
+		Vec3f cPoint = m_points[idx];
+		collisionInfo newCollid(idx, i, cPoint, pCollide);
+		collisionPtArray.push_back(newCollid);
+
+		// Force info
+		float normForce = computeNormalForce((cPoint-pCollide).norm(), radius, C_HOLE_RADIUS);
+		float friction = computeFriction(normForce, radius, C_HOLE_RADIUS);
+
+		Vec3f contactForce = Vec3f();
+		Vec3f normDirec = cPoint - pCollide;
+		if (normDirec.norm()>0.001)
+		{
+			normDirec.normalize();
+			contactForce += normDirec*normForce;
+		}
+
+		Vec3f segDirect = pt1 - pt2;
+		segDirect = segDirect*(segDirect*wireVelocity[i]);
+		if (segDirect.norm()>0.001)
+		{
+			segDirect.normalize();
+			contactForce += segDirect*friction;
+		}
+
+		// Store force to wire line
+		if (forceToWire)
+		{
+			float leng = (pt2-pt1).norm();
+			forceToWire->at(i) += contactForce*(pt2-pCollide).norm()/leng;
+			forceToWire->at(i+1) += contactForce*(pt1-pCollide).norm()/leng;
+		}
+
+		// Store force to center point
+		m_Force[idx] -= contactForce;
+	}
 }
 
 float centerLine::computeNormalForce( float distance, float wireRadius, float holeRadius )
@@ -227,6 +334,7 @@ float centerLine::computeFriction( float normalForce, float wireRadius, float ho
 {
 	float k = C_friction; // Friction factor
 	float kTighten = C_tighten;
+
 	if (holeRadius > wireRadius)
 	{
 		return k*normalForce;
