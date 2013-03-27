@@ -26,7 +26,7 @@ void centerLine::init()
 // 	points.push_back(Vec3f(2*length,3*length,0));
 // 	points.push_back(Vec3f(2*length,4*length,0));
 
-	points.push_back(Vec3f(30,-30,7));
+	points.push_back(Vec3f(40,-40,7));
 // 	points.push_back(Vec3f(28,0,13));
 // 	points.push_back(Vec3f(22,18,13));
 	points.push_back(Vec3f(-1,44,14));
@@ -487,6 +487,37 @@ void centerLine::drawNodeContraint()
 		gluSphere(qobj,1.2,20,20);
 		glPopMatrix();
 	}
+}
+
+void centerLine::updateTipPosition( Vec3f newPos )
+{
+	arrayVec3f* nodePos = efgObj->nodePos0Vec();
+
+	static int count = 0;
+	static float originalL = (m_points0[0]-m_points0[1]).norm();
+	count++;
+	float delta = originalL*PROPORTION;
+	float length = originalL - delta*(count-1);
+
+	// Update constraint index
+	std::vector<pointConstraint> newConstraints;
+	for (int i=0; i<constraintPoints.size(); i++)
+	{
+		// Check if this node is still constrained
+		if (isPointInCylinder((*nodePos)[constraintPoints[i].nodeIdx], newPos, m_points[1], 2*C_HOLE_RADIUS))
+		{
+			// Update line coordinate
+			constraintPoints[i].lineCoord = (constraintPoints[i].lineCoord*length - delta)/(length - delta);
+			newConstraints.push_back(constraintPoints[i]); // This may require a little update !!!!!
+
+		}
+	}
+
+	constraintPoints = newConstraints;
+
+	// Update position
+	m_points[0] = newPos;
+	m_points0[0] = newPos; //Should be differennt !!!!!; Proportional to each other
 }
 
 

@@ -8,6 +8,7 @@
 #include "catheter.h"
 #include "centerLine.h"
 #include "wireTest.h"
+#include "cuttingTest.h"
 
 #include "MyFFD.h"
 #include "SignoriniCollision.h"
@@ -142,6 +143,9 @@ protected:
 	wireTest m_wireTest;
 	BOOL m_bMeshLess;
 
+	cuttingTest m_cutTest;
+	Vec3f catheterPt, cPt1, cPt2;
+
 	SignoriniCollision collisionModel;
 
 
@@ -164,6 +168,7 @@ public:
 	void drawDebug();
 	void DrawText();
 	void drawMajorPapilla();
+	void drawCutFront();
 };
 
 #ifndef _DEBUG  // debug version in CuttingSimulation_GPUView.cpp

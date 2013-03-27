@@ -40,6 +40,18 @@ public:
 		}
 		return false;
 	};
+
+	void removeElementValue(std::vector<int>& v, int eValue)
+	{
+		for(int i=0;i<v.size();i++)
+		{
+			if(v[i]==eValue)
+			{
+				removeElement(v,i);
+				break;
+			}
+		}
+	}
 	void removeElement(std::vector<int>& v, int localIdx)
 	{
 		v[localIdx]=v[v.size()-1];
@@ -55,7 +67,17 @@ public:
 		v[localIdx]=v[v.size()-1];
 		v.pop_back();
 	};
-
+	int indexOfElement(std::vector<int>& v, int eValue)
+	{
+		for(int i=0;i<v.size();i++)
+		{
+			if(v[i]==eValue)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
 	int indexOfElement(std::vector<int>* v, int value)
 	{
 		std::vector< int >::iterator location=v->end();

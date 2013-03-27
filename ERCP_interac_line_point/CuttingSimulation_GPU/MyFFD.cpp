@@ -7334,9 +7334,9 @@ void MyFFD::drawCatheter( int mode )
 		}
 	}
 
-// 	arrayVec3f stringP = stringPoint();
-// 	glColor3f(0.7,0.7,0.7);
-// 	drawCylinder(stringP[0], stringP[1], RadiusOfEndoscope/5);
+	arrayVec3f stringP = stringPoint();
+	glColor3f(0.7,0.7,0.7);
+	drawCylinder(stringP[0], stringP[1], RadiusOfEndoscope/5);
 
 
 	float arrowLength = 10;

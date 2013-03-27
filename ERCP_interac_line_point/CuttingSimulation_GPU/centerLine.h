@@ -17,6 +17,9 @@
 #define C_friction		0.1		// Friction coefficient
 #define C_tighten		10000	// Friction by tightening
 
+// Cutting
+#define PROPORTION		0.1
+
 struct collisionInfo
 {
 	int type;			//0 -> wire point; 1 -> centerline point
@@ -68,6 +71,7 @@ public:
 	// with meshless model
 	void constraintModel(EFG_CUDA_RUNTIME* object);
 	void updateMeshlessContraint();
+	void updateTipPosition( Vec3f newPos );
 
 	// With catheter
 	void interactWithWire(arrayVec3f wirePoints, arrayVec3f wireVelocity, int insideIdx, 
@@ -83,7 +87,7 @@ public:
 	// Temporal variable - interact with catheter
 	void detectInsertionIdx(arrayVec3f wirePoints);
 	bool isPointInCylinder( Vec3f pt, Vec3f c1, Vec3f c2, float radius );
-
+	
 	float force;
 	arrayVec3f m_interactionForce;
 	std::vector<collisionInfo> collisionPtArray;
