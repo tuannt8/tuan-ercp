@@ -667,6 +667,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\cuttingTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\cuttingTest.h"
+				>
+			</File>
+			<File
 				RelativePath=".\wireTest.cpp"
 				>
 			</File>

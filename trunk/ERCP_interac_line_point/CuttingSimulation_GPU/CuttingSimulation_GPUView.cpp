@@ -144,8 +144,9 @@ void CCuttingSimulation_GPUView::OnInitialUpdate()
 	m_centerLine.init();
 	m_wireTest.init();
 
-	m_bMeshLess = FALSE;
+	m_bMeshLess = TRUE;
 
+	catheterPt = Vec3f(170,50,7);
  	majorPapillaInit();
 // 
 	float M2=50;			//mass
@@ -179,11 +180,41 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if(lsChar=='E')
 	{
-		bCollisionMode = !bCollisionMode;
+		Vec3f pt1 = m_centerLine.m_points[0];
+		Vec3f pt2 = m_centerLine.m_points[1];
+		static bool inited = false;
+		if (!inited)
+		{
+			cPt1 = pt1;
+			cPt2 = pt1;
+			inited = true;
+		}
+		cPt1 = cPt2;
+		cPt2 += (pt2 - pt1)*0.1;
+
+
 	}
 	else if(lsChar=='C')
 	{
-		bCut = TRUE;
+		// Update electrical wire
+		Vec3f pt1 = m_centerLine.m_points[0];
+		Vec3f pt2 = m_centerLine.m_points[1];
+		static bool inited = false;
+		if (!inited)
+		{
+			cPt1 = pt1;
+			cPt2 = pt1;
+			inited = true;
+		}
+		cPt1 = cPt2;
+		cPt2 += (pt2 - pt1)*PROPORTION;
+		m_centerLine.updateTipPosition(cPt2);
+
+		// Cutting
+		m_cutTest.cutPapilla(catheterPt, cPt1, cPt2, &m_Meshfree);
+
+
+
 	}
 	else if(lsChar=='R')
 	{
@@ -191,7 +222,7 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if(lsChar=='X')
 	{
-		m_wireTest.move(Vec3f(1,0,0));
+		m_cutTest.cutSurStep2();
 	}
 	else if(lsChar=='Z')
 	{
@@ -199,8 +230,8 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if (lsChar == 'G')
 	{
-		char* source = ("C:\\Users\\tuan\\Desktop\\mp_3.stl");
-		char* des = ("C:\\Users\\tuan\\Desktop\\mp_3.txt");
+		char* source = ("C:\\Users\\tuan\\Desktop\\cy_h.stl");
+		char* des = ("C:\\Users\\tuan\\Desktop\\cy_h.txt");
 
 		CSTL surObj;
 		if (surObj.ReadData(source))
@@ -461,13 +492,14 @@ void CCuttingSimulation_GPUView::DrawView()
 	DrawText();
 	drawDebug();
 
+
+	if (m_displayMode[1])
+		m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
+	if (m_displayMode[2])
+		m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
+
 	if (m_bMeshLess)
 	{
-		if (m_displayMode[1])
-			m_Meshfree.drawSurfObj(Vec3f(0.2,0.6,0.2),1);
-		if (m_displayMode[2])
-			m_Meshfree.drawSurfObj(Vec3f(0.8,0.0,0.3),0);
-
 		if (!m_displayMode[6])
 		{
 			m_Meshfree.drawEFGObj(Vec3f(1,0,0),1.0,0);
@@ -481,7 +513,8 @@ void CCuttingSimulation_GPUView::DrawView()
 		m_catheter1.drawCatheter(2);
 	}
 
-
+	m_cutTest.draw();
+	drawCutFront();
 //	m_wireTest.draw(1);
 
 	m_centerLine.draw(1);
@@ -507,7 +540,7 @@ void CCuttingSimulation_GPUView::SetupView()
 	GLfloat specular[] = {1.0f, 1.0f, 1.0f, 1.0f};
 
 	glEnable(GL_DEPTH_TEST);                                        
-	glEnable(GL_CULL_FACE);
+//	glEnable(GL_CULL_FACE);
 	//	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//	glEnable(GL_BLEND);
 
@@ -638,12 +671,12 @@ void CCuttingSimulation_GPUView::TorusInit(int res)
 void CCuttingSimulation_GPUView::majorPapillaInit()
 {
 //	m_Meshfree.loadSurfObj("../data/mp_lowRes.txt");
-	m_Meshfree.loadSurfObj("../data/mp_3.txt");
-//	m_Meshfree.loadSurfObj("../data/liver2194.txt");
+//	m_Meshfree.loadSurfObj("../data/mp_3.txt");
+	m_Meshfree.loadSurfObj("../data/cy_h.txt");
 
 	if (m_bMeshLess)
 	{
-		m_Meshfree.generateEFGObj(8, false);
+		m_Meshfree.generateEFGObj(5, false);
 		m_Meshfree.connectSurfAndEFG();
 		m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
 		m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
@@ -831,4 +864,13 @@ void CCuttingSimulation_GPUView::drawMajorPapilla()
 void CCuttingSimulation_GPUView::renderCatheter()
 {
 		
+}
+
+void CCuttingSimulation_GPUView::drawCutFront()
+{
+	glBegin(GL_TRIANGLES);
+	glVertex3f(catheterPt[0], catheterPt[1], catheterPt[2]);
+	glVertex3f(cPt1[0], cPt1[1], cPt1[2]);
+	glVertex3f(cPt2[0], cPt2[1], cPt2[2]);
+	glEnd();
 }
