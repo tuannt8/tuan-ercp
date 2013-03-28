@@ -56,6 +56,9 @@ void Meshfree_GPU::generateEFGObj(int res, bool stress)
 		EFGObj=new EFG_CUDA_RUNTIME;
 		EFGObj->init(nodeGenerator.nodePos(), nodeGenerator.nodeVolume(), SupportRadius, SurfObj);
 	}
+
+	arrayVec3f* force = EFGObj->compressForce();
+	force->resize(nodeGenerator.nodePos()->size());
 }
 
 void Meshfree_GPU::initFixedConstraintGPU()

@@ -56,6 +56,7 @@ public:
 	AABBTreeEdgeDiff* getBVH(){return &BVHAABB;};
 	void updateBVH(){BVHAABB.updateAABBTreeBottomUp();}
 	std::vector<Vec2i>* edge(){return &Edge;};
+	arrayVec3f* compressForce(){return EFGObj->compressForce();}
 
 	// Collision response
 	double**			MappingMatrix;
@@ -114,6 +115,8 @@ private:
 	float EFGTime;
 	float SurfTime;
 	float Count;
+
+
 };
 
 #endif

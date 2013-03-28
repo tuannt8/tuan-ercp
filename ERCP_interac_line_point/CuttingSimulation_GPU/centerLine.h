@@ -18,7 +18,7 @@
 #define C_tighten		10000	// Friction by tightening
 
 // Cutting
-#define PROPORTION		0.1
+#define SHORTEN_STEP	10
 
 struct collisionInfo
 {
@@ -71,7 +71,7 @@ public:
 	// with meshless model
 	void constraintModel(EFG_CUDA_RUNTIME* object);
 	void updateMeshlessContraint();
-	void updateTipPosition( Vec3f newPos );
+	void updateTipPosition();
 
 	// With catheter
 	void interactWithWire(arrayVec3f wirePoints, arrayVec3f wireVelocity, int insideIdx, 

@@ -120,6 +120,7 @@ public:
 	AABBTreeEdge* getBVH(){return &BVHAABB;};
 	AABBTreePoint* getBVHPoint(){return &BVHAABBPoint;};
 	void setForce();
+	arrayVec3f* compressForce(){return &m_compressForce;}
 
 	//Topology control
 	void removeEdges(std::vector<int>& idx);
@@ -258,5 +259,8 @@ private:
 
 	int NbUpdated;
 	int Count;
+
+	// Additional
+	arrayVec3f m_compressForce;
 };
 #endif

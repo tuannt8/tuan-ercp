@@ -32,7 +32,7 @@ public:
 	void collisionBtwRectAndEdges(Rect rect, std::vector<Vec3f>& pos, std::vector<Vec2i>& edge, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint);
 	void collisionBtwRectAndEdges(Rect rect, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint);
 	void collisionBtwTriAndEdges(std::vector<Vec3f>* posT, std::vector<Vec3i>* tri, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint);
-	void collisionBtwTriAndEdgesWithBVH(std::vector<Vec3f>* posT, std::vector<Vec3i>* tri, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, AABBTree* BVH, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint);
+	void collisionBtwTriAndEdgesWithBVH(std::vector<Vec3f>* posT, std::vector<Vec3i>* tri, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, AABBTreeEdge* BVH, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint);
 	void collisionBtwTrisAndTrisWithBVH(std::vector<Vec3f>* pos1, std::vector<Vec3i>* tri1, std::vector<Vec3f>* pos2, std::vector<Vec3i>* tri2, AABBTree* BVH, std::vector<int>& colTriIdx1, std::vector<int>& colTriIdx2);
 	bool collisionBtwSurfAndAxisLine(SurfaceObj* obj, Vec3f pos, Vec3i direc, std::vector<Vec3f>& intersection);
 	bool collisionBtwSurfAndLineSeg(SurfaceObj* obj, Vec3f l1, Vec3f l2);//

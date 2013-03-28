@@ -196,24 +196,32 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	else if(lsChar=='C')
 	{
+		// Update BVH before cut
+		m_Meshfree.surfObj()->updateBVH();
+		m_Meshfree.efgObj()->getBVH()->updateAABBTreeBottomUp();
+		m_Meshfree.updateBVH();
+		//
+		START = FALSE;
 		// Update electrical wire
-		Vec3f pt1 = m_centerLine.m_points[0];
-		Vec3f pt2 = m_centerLine.m_points[1];
 		static bool inited = false;
 		if (!inited)
 		{
-			cPt1 = pt1;
-			cPt2 = pt1;
+			cPt1 = m_centerLine.m_points[0];
+			cPt2 = m_centerLine.m_points[0];
 			inited = true;
 		}
-		cPt1 = cPt2;
-		cPt2 += (pt2 - pt1)*PROPORTION;
-		m_centerLine.updateTipPosition(cPt2);
+		else
+		{
+			arrayVec3f* points = m_Meshfree.surfObj()->point();
+			cPt1 = points->at(points->size()-1);
+		}
+		m_centerLine.updateTipPosition();
+		cPt2 = m_centerLine.m_points[0];
 
 		// Cutting
 		m_cutTest.cutPapilla(catheterPt, cPt1, cPt2, &m_Meshfree);
 
-
+		START = true; // Damn the bug
 
 	}
 	else if(lsChar=='R')
@@ -679,7 +687,8 @@ void CCuttingSimulation_GPUView::majorPapillaInit()
 		m_Meshfree.generateEFGObj(5, false);
 		m_Meshfree.connectSurfAndEFG();
 		m_Meshfree.boxConstraint(Vec3f(-150, 50, -300), Vec3f(300, 300, 300));
-		m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
+		// m_Meshfree.boxConstraint(Vec3f(-150, -300, -300), Vec3f(-10, 300, 300));
+		
 		m_centerLine.constraintModel(m_Meshfree.efgObj());
 
 		m_Meshfree.initFixedConstraintGPU();
