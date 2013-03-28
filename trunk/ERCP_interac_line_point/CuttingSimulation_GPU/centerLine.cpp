@@ -425,9 +425,6 @@ void centerLine::constraintModel( EFG_CUDA_RUNTIME* object )
 			fixIdxs.push_back(i);
 		}
 	}
-
-//	efgObj->addConstraintIdx(fixIdxs);
-	// This is 2nd BC condition (Constraint position, not 1BC condition)???
 }
 
 void centerLine::updateMeshlessContraint()
@@ -489,35 +486,32 @@ void centerLine::drawNodeContraint()
 	}
 }
 
-void centerLine::updateTipPosition( Vec3f newPos )
+void centerLine::updateTipPosition()
 {
-	arrayVec3f* nodePos = efgObj->nodePos0Vec();
-
-	static int count = 0;
-	static float originalL = (m_points0[0]-m_points0[1]).norm();
-	count++;
-	float delta = originalL*PROPORTION;
-	float length = originalL - delta*(count-1);
-
+	Vec3f direct = (m_points[1]-m_points[0]);
+	direct.normalize();
+	Vec3f newPos = m_points[0] + direct*SHORTEN_STEP;
+	float length = (m_points[1]-m_points[0]).norm();
+	
 	// Update constraint index
 	std::vector<pointConstraint> newConstraints;
+	float thres_hold = (length-SHORTEN_STEP)/length;
 	for (int i=0; i<constraintPoints.size(); i++)
 	{
-		// Check if this node is still constrained
-		if (isPointInCylinder((*nodePos)[constraintPoints[i].nodeIdx], newPos, m_points[1], 2*C_HOLE_RADIUS))
+		pointConstraint curCo = constraintPoints[i];
+		if (curCo.lineCoord <= thres_hold)
 		{
-			// Update line coordinate
-			constraintPoints[i].lineCoord = (constraintPoints[i].lineCoord*length - delta)/(length - delta);
-			newConstraints.push_back(constraintPoints[i]); // This may require a little update !!!!!
-
+			curCo.lineCoord = (curCo.lineCoord*length)/(length-SHORTEN_STEP);
+			newConstraints.push_back(curCo);
 		}
 	}
-
 	constraintPoints = newConstraints;
 
-	// Update position
+	// Update tip
 	m_points[0] = newPos;
-	m_points0[0] = newPos; //Should be differennt !!!!!; Proportional to each other
+	Vec3f direct0 = m_points0[1]-m_points0[0];
+	direct0.normalize();
+	m_points0[0] += direct0*SHORTEN_STEP;
 }
 
 

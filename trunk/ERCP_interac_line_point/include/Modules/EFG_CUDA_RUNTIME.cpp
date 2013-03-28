@@ -1375,6 +1375,17 @@ void EFG_CUDA_RUNTIME::updatePositionExplicit(float dt, int itter)
 			NodeForce[i]-=NodeVel[i]*DAMPING;
 		}
 
+		//add compression force !!!
+		// This force help the cut open when the constrained points is release
+		for (int i=0; i<NbNode; i++)
+		{
+			for (int j=0; j<3; j++)
+			{
+				NodeForce[i*3+j] += m_compressForce[i][j];
+			}
+
+		}
+
 		//Explicit integration
 		for(int i=0;i<NbNode;i++)
 		{
@@ -1802,10 +1813,10 @@ void EFG_CUDA_RUNTIME::removeEdgesInCollisionModel(std::vector<int>& idx)
 		int edgeIdxEnd=Edge->size()-1;
 
 		// 1. Update BVH
-		AABBNode* node=BVHAABB.findLeafNode(idx[i]);
+		AABBNode* node=BVHAABB.findLeafNode(idx[i]);ASSERT(node);
 		if(node)
 			BVHAABB.removeNode(node);
-		node=BVHAABB.findLeafNode(edgeIdxEnd);
+		node=BVHAABB.findLeafNode(edgeIdxEnd);ASSERT(node);
 		if(node)
 			node->IndexInLeafNode=idx[i];
 

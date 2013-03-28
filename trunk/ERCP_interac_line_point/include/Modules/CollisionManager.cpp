@@ -60,7 +60,7 @@ void CollisionManager::collisionBtwTriAndEdges(std::vector<Vec3f>* posT, std::ve
 	}
 }
 
-void CollisionManager::collisionBtwTriAndEdgesWithBVH(std::vector<Vec3f>* posT, std::vector<Vec3i>* tri, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, AABBTree* BVH, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint)
+void CollisionManager::collisionBtwTriAndEdgesWithBVH(std::vector<Vec3f>* posT, std::vector<Vec3i>* tri, std::vector<Vec3f>* pos, std::vector<Vec2i>* edge, AABBTreeEdge* BVH, std::vector<int>& colEdgeIdx, std::vector<Vec3f>& intersectionPoint)
 {
 	// 각 triangle에 대해서 collision 검사
 	for(int i=0;i<tri->size();i++)

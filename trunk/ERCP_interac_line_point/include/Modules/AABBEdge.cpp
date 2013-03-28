@@ -144,6 +144,7 @@ void AABBTreeEdge::generateBoundingBox(std::vector<int>& edgeIdx, AABBNode* root
 	{
 		root->End=true;
 		root->IndexInLeafNode=edgeIdx[0];
+
 		//LeafNode.insert(std::pair<int,AABBNode*>(edgeIdx[0],root));
 		//LeafNodeIdx.push_back(edgeIdx[0]);
 		//LeafNodePtr.push_back(root);

@@ -6,6 +6,8 @@
 #define MAX 100000000
 #define MIN -100000000
 
+#define COMPRESS_FORCE 5000
+
 class cuttingTest
 {
 public:
@@ -18,9 +20,9 @@ public:
 					Meshfree_GPU* obj); // Object info
 
 
-	bool cutSurface( Vec3f sPt, Vec3f cPt1, Vec3f cPt2, SurfaceObj* surf );
+	bool cutSurface(arrayVec3f cutP, arrayVec3i cutTri, SurfaceObj* surf );
 	void cutSurStep2();
-
+	void cutEFGObj(arrayVec3f cutP, arrayVec3i cutTri);
 	void updateConnection();
 private:
 	bool findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRemoveTri, std::vector<arrayInt>& boundLoops, arrayInt *edgeToRemove = NULL);
@@ -30,6 +32,7 @@ private:
 	void addPointToConvex( arrayVec3f _cPoints, int pIdx, arrayVec3i& _cFace );
 	bool isDirectFace( Vec3f pt, int triIdx, arrayVec3f& cPoints, arrayVec3i& cFace );
 	void addNeighbor( Meshfree_GPU* obj_GPU, arrayInt& neighbor, arrayInt &potentialNeibor, int pIdx );
+	
 	// For step debug
 	arrayInt m_collidedTriIdx;
 	SurfaceObj* s_surfObj;

@@ -1,0 +1,9 @@
+NbUpdated: 9
+NbUpdated: 12
+NbUpdated: 12
+NbUpdated: 12
+NbUpdated: 17
+NbUpdated: 10
+NbUpdated: 12
+NbUpdated: 10
+NbUpdatedAve: 11.750000

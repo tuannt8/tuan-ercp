@@ -57,6 +57,7 @@ typedef struct
 typedef std::vector<Vec3f> arrayVec3f;
 typedef std::vector<Vec3i> arrayVec3i;
 typedef std::vector<int> arrayInt;
+typedef std::vector<float> arrayFloat;
 typedef std::vector<Vec2f> arrayVec2f;
 typedef std::vector<Vec2i> arrayVec2i;
 

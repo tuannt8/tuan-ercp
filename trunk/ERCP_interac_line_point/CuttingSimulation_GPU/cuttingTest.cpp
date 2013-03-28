@@ -19,11 +19,25 @@ bool cuttingTest::cutPapilla( Vec3f sPt, Vec3f cPt1, Vec3f cPt2,  Meshfree_GPU* 
 	s_points = s_surfObj->point();
 	Obj_GPU = obj;
 
-	bool bIntersected = cutSurface(sPt, cPt1, cPt2, obj->surfObj());
+	// cut front
+	arrayVec3f cutP;
+	arrayVec2i cutE;
+	arrayVec3i cutTri;
+
+	cutP.push_back(sPt);
+	cutP.push_back(cPt1);
+	cutP.push_back(cPt2);
+	cutE.push_back(Vec2i(0,1));
+	cutE.push_back(Vec2i(1,2));
+	cutE.push_back(Vec2i(2,0));
+	cutTri.push_back(Vec3i(0,1,2));
+
+	bool bIntersected = cutSurface(cutP, cutTri, obj->surfObj());
 
 	if (bIntersected)
 	{
 		cutSurStep2();
+		cutEFGObj(cutP, cutTri);
 		updateConnection();
 		return true;
 	}
@@ -50,26 +64,12 @@ void cuttingTest::draw( int mode )
 
 }
 
-bool cuttingTest::cutSurface( Vec3f sPt, Vec3f cPt1, Vec3f cPt2, SurfaceObj* surf )
+bool cuttingTest::cutSurface( arrayVec3f cutP, arrayVec3i cutTri, SurfaceObj* surf )
 {
 	arrayVec3f* surPoint = surf->point();
 	arrayVec3i* surTri = surf->face();
 	AABBTree* surBVH = surf->getBVH();
 	VectorFunc vecF;
-
-	// cut front
-	arrayVec3f cutP;
-	arrayVec2i cutE;
-	arrayVec3i cutTri;
-
-	cutP.push_back(sPt);
-	cutP.push_back(cPt1);
-	cutP.push_back(cPt2);
-	cutE.push_back(Vec2i(0,1));
-	cutE.push_back(Vec2i(1,2));
-	cutE.push_back(Vec2i(2,0));
-	cutTri.push_back(Vec3i(0,1,2));
-
 
 	// Detect collision
 	arrayInt temp;
@@ -660,4 +660,37 @@ void cuttingTest::addNeighbor( Meshfree_GPU* obj_GPU, arrayInt& neighbor, arrayI
 	{
 		addNeighbor(obj_GPU, neighbor, potentialNeibor, newNeighbor[i]);
 	}
+}
+
+void cuttingTest::cutEFGObj(arrayVec3f cutP, arrayVec3i cutTri)
+{
+	EFG_CUDA_RUNTIME *obj = Obj_GPU->efgObj();
+	VectorFunc func;
+	GeometricFunc geoFunc;
+	CollisionManager collision;
+
+	std::vector<Vec3f>* efgNode=obj->nodePosVec();
+	std::vector<Vec2i>* efgEdge=obj->edge();
+	AABBTreeEdge* edfBVH=obj->getBVH();
+
+	std::vector<int> colEdgeIdx;
+	std::vector<Vec3f> intersectionPoint;
+
+	// 1-1. Collision detection between cut surface and edge of the EFG
+	collision.collisionBtwTriAndEdgesWithBVH(&cutP, &cutTri, efgNode, efgEdge, edfBVH, colEdgeIdx, intersectionPoint);
+	func.arrangeVector(colEdgeIdx);
+
+	// 1-a. Add pushing force to affected nodes
+	arrayVec3f *force = Obj_GPU->compressForce();
+	for (int i=0; i<colEdgeIdx.size(); i++)
+	{
+		Vec2i curE = efgEdge->at(colEdgeIdx[i]);
+		Vec3f direct = efgNode->at(curE[1])-efgNode->at(curE[0]);
+		direct.normalize();
+		force->at(curE[0]) -= direct*COMPRESS_FORCE; // Should it proportion with edge length?
+		force->at(curE[1]) += direct*COMPRESS_FORCE;
+	}
+
+	// 1-2. Remove intersected edges
+	obj->removeEdges(colEdgeIdx);
 }
