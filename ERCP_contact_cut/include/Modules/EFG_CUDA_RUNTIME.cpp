@@ -2279,3 +2279,4 @@ float** EFG_CUDA_RUNTIME::returnPreDisNoDeform()
 
 	return &NodePreDis;
 }
+
