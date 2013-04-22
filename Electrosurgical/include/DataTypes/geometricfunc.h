@@ -10,7 +10,7 @@
 
 #include "Vec.h"
 #include "Mat.h"
-#include "AABB.h"
+#include "../Modules/AABB.h"
 #include <vector>
 #include <float.h>
 #include "DataTypes/Define.h"
@@ -54,6 +54,7 @@ public:
 		else
 			return false;
 	}
+
 	static bool isEdge(int pt1, int pt2, std::vector<Vec2i>* edges, int &index)
 	{
 		for (int i=0; i<edges->size(); i++)

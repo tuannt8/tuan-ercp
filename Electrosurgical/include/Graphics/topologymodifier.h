@@ -20,6 +20,8 @@ public:
 public:
 	void addPoints(TopologyContainer* container, std::vector<Vec3f>* points);
 	void addPoints(TopologyContainer* container, std::vector<Vec3f>& points);
+
+	void addPoints(TopologyContainer* container, std::vector<Vec3f>* point0, std::vector<Vec3f>* points);
 	
 	void addEdges(TopologyContainer* container, std::vector<Vec2i>* edges);
 	void addEdges(TopologyContainer* container, std::vector<Vec2i>& edges);
@@ -37,6 +39,7 @@ public:
 	void removeFaces(TopologyContainer* container, std::vector<int>& idxs);
 
 public: //Should be private
+	void addPoint(TopologyContainer* container, Vec3f _point0, Vec3f _point);
 	void addPoint(TopologyContainer* container, Vec3f point);
 	void addEdge(TopologyContainer* container, Vec2i edge);
 	void addFace(TopologyContainer* container, Vec3i face, int preNbPoint);

@@ -7,6 +7,8 @@
 #include "CuttingSimulation_GPUDoc.h"
 #include "CuttingSimulation_GPUView.h"
 
+#include "simpleRemesh.h"
+
 #include "stl.h"
 #include "voxel.h"
 #include "Utility.h"
@@ -147,20 +149,46 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		else
 			START=true;
 	}
-	if (lsChar == 'C')
+	if (lsChar == 'C') // Define intersect area
 	{
-		lineTool.cut8(m_Meshfree.surfObj());
+		CTimeTick time;
+		time.SetStart();
+		lineTool.cut9(m_Meshfree.surfObj());
+		time.SetEnd();
+		Utility::urgentLog("Time for intersection detect: %lf", time.GetTick());
 	}
-	if (lsChar == 'R')
+	if (lsChar == 'V') // Generate new mesh
 	{
-		lineTool.stepDebug8();
+		CTimeTick time;
+		time.SetStart();
+
+		lineTool.stepDebug9();
+
+		time.SetEnd();
+		Utility::urgentLog("Mesh generating: %lf", time.GetTick());
+	}
+	if (lsChar == 'E') // Cut front reset
+	{
+		lineTool.resetPath();	
+	}
+	if (lsChar == 'R') // Remesh
+	{
+		simpleRemesh mesh;
+		arrayInt cutFaceIdx = lineTool.m_newFIdxs;
+		mesh.remesh(m_Meshfree.surfObj(), cutFaceIdx, 25); // can be 1 time or many times
+		arrayInt newPt = mesh.newPointIdx;
+		lineTool.m_newFIdxs = mesh.newFaceIdx;
+	
+		//	mesh.updateShapeFunc(&m_Meshfree, newPt);
 	}
 	if (lsChar == 'E')
 	{
-		lineTool.resetPath();
-			
+		simpleRemesh mesh;
+		arrayInt cutFaceIdx = lineTool.m_newFIdxs;
+		mesh.refineMesh(m_Meshfree.surfObj(), &cutFaceIdx);
+		lineTool.m_newFIdxs = cutFaceIdx;
 	}
-	else if (lsChar == 'G')
+	if (lsChar == 'G')
 	{
 		char* source = ("C:\\Users\\tuan\\Desktop\\needle.stl");
 		char* des = ("C:\\Users\\tuan\\Desktop\\needle.txt");
@@ -180,13 +208,9 @@ void CCuttingSimulation_GPUView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 	}
 	if (lsChar == 'T')
 	{
-		CTimeTick timeTick;
-		timeTick.SetStart();
 		Vec3f test = lineTool.invertMappingFunction(&m_Meshfree, Vec3f(0,100,0));
-		timeTick.SetEnd();
-		Utility::urgentLog("Time: %lf", timeTick.GetTick());
 	}
-	else if (nChar >= 48 && nChar <= 57   )
+	if (nChar >= 48 && nChar <= 57   )
 	{
 		m_displayMode[nChar - 48] = ! m_displayMode[nChar - 48];
 	}
@@ -336,6 +360,13 @@ void CCuttingSimulation_GPUView::DrawView()
 //	m_Meshfree.drawSurfObj(Vec3f(1,0,0),0);
 //	boundTest.draw(1);
 
+	if (m_displayMode[9])
+	{
+		lineTool.draw(0);
+	}
+	if(m_displayMode[8])
+		lineTool.draw(1);
+
 	if (m_displayMode[1])
 		m_Meshfree.surfObj()->drawObject(Vec3f(1,0,0));
 	
@@ -346,18 +377,13 @@ void CCuttingSimulation_GPUView::DrawView()
 	{
 		m_Meshfree.surfObj()->drawPointIdx();
 	}
-	if (m_displayMode[5])
+	if (!m_displayMode[5])
 	{
 		m_Meshfree.drawEFGObj(Vec3f(1,0,0), 2, 0);
 		m_Meshfree.efgObj()->drawEdge();
 	}
 
-	if (m_displayMode[9])
-	{
-		lineTool.draw(0);
-	}
-	if(m_displayMode[8])
-		lineTool.draw(1);
+
 
 // 	if (m_displayMode[9])
 // 		tool.draw();
@@ -426,10 +452,11 @@ void CCuttingSimulation_GPUView::LiverInit(int res)
 // 	m_Surf.constructAABBTree();
 
 	m_Meshfree.loadSurfObj("../data/liver2194.txt");
-	m_Meshfree.generateEFGObj(res, false);
-	m_Meshfree.connectSurfAndEFG();
-	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
-	m_Meshfree.initFixedConstraintGPU();
+//	m_Meshfree.generateEFGObj(res, false);
+// 	m_Meshfree.connectSurfAndEFG();
+// 	m_Meshfree.boxConstraint(Vec3f(-500,-500,-500), Vec3f(-200,500,500));
+// 	m_Meshfree.initFixedConstraintGPU();
+
 // 	m_Tool.initEx2();
 }
 void CCuttingSimulation_GPUView::KidneyInit(int res)

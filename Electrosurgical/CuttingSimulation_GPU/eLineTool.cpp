@@ -27,6 +27,7 @@ void eLineTool::draw( int mode )
 		glColor3f(0, 1 ,0);
 		Utility::drawFace(s_points, s_faces, &m_collidedTriIdx);
 
+		glColor3f(1, 1 ,0);
 		Utility::drawFace(s_points, s_faces, &m_newFIdxs);
 	}
 }
@@ -67,7 +68,7 @@ void eLineTool::stepDebug8()
 	ASSERT(boundLoops.size()==1);
 	if (boundLoops.size()==0)
 		return;
-
+ 
 	arrayInt bound = boundLoops[0];
 
 	int preNbPoint = s_points->size();
@@ -289,10 +290,141 @@ void eLineTool::objTopoModifer(SurfaceObj* surfObj, arrayInt &generatedIdx, arra
 		m_newFIdxs.push_back(objTris->size()-1);
 	}
 
-	surfObj->updateNormal();
-	surfObj->updateBVH(); // This can be optimized
+ 	surfObj->updateNormal();
+ 	surfObj->updateBVH(); // This can be optimized
 }
 
+bool eLineTool::findBoundaryLoopOptimize( TopologyContainer* surfTopo, arrayInt idxOfRemoveTri, std::vector<arrayInt>& boundLoops, arrayInt *edgeToRemove)
+{
+	std::vector<arrayInt>* faceAroundEdge = surfTopo->facesAroundEdge();
+	std::vector<arrayInt>* edgeOnFace = surfTopo->edgesInFace();
+	arrayVec2i* edges = surfTopo->edge();
+	VectorFunc func;
+
+	// 1. edge mesh
+	arrayInt edgeOnBuondary;
+	arrayInt edgeRemove;
+
+	arrayInt allEdge;
+	for (int i=0; i<idxOfRemoveTri.size(); i++)
+	{
+		arrayInt edgeIn = edgeOnFace->at(idxOfRemoveTri[i]);
+		for (int j=0; j<edgeIn.size(); j++)
+		{
+			allEdge.push_back(edgeIn[j]);
+		}
+	}
+
+	std::sort(allEdge.begin(), allEdge.end());
+
+	for (int i=0; i<allEdge.size(); i++)
+	{
+		if (i==allEdge.size()-1)
+		{
+			edgeOnBuondary.push_back(allEdge[i]);
+			continue;
+		}
+		if (allEdge[i]==allEdge[i+1])
+		{
+			edgeRemove.push_back(allEdge[i]);
+			i++;
+		}
+		else
+			edgeOnBuondary.push_back(allEdge[i]);
+	}
+
+
+	// 	while(allEdge.size()>0)
+	// 	{
+	// 		int curE = allEdge[0];
+	// 		allEdge.erase(allEdge.begin());
+	// 		bool found = false;
+	// 		for (int i=0; i<allEdge.size(); i++)
+	// 		{
+	// 			if (curE == allEdge[i])
+	// 			{
+	// 				found = true;
+	// 				edgeRemove.push_back(curE);
+	// 				allEdge.erase(allEdge.begin()+i);
+	// 				break;
+	// 			}
+	// 		}
+	// 		if (!found)
+	// 		{
+	// 			edgeOnBuondary.push_back(curE);
+	// 		}
+	// 	}
+
+	if (edgeToRemove)
+		edgeToRemove->insert(edgeToRemove->end(), edgeRemove.begin(), edgeRemove.end());
+
+	if (edgeOnBuondary.size()==0)
+	{
+		return true;//??
+		return false;
+	}
+
+
+
+	// 2. Point mesh
+	// 	arrayInt pointsIdx;
+	// 	for (int i=0; i<edgeOnBuondary.size();i++)
+	// 	{
+	// 		pointsIdx.push_back((*edges)[edgeOnBuondary[i]][0]);
+	// 		pointsIdx.push_back((*edges)[edgeOnBuondary[i]][1]);
+	// 	}
+	// 	func.arrangeVector(pointsIdx);
+
+	// 3. Find boundary loop
+
+	std::sort(edgeOnBuondary.begin(), edgeOnBuondary.end());
+	Vec2i firstE = edges->at(edgeOnBuondary[0]);
+	arrayInt boundLoop;
+	boundLoop.push_back(firstE[0]);
+	boundLoop.push_back(firstE[1]);
+	edgeOnBuondary.erase(edgeOnBuondary.begin());
+	int curPIdx = firstE[1];
+
+	while(1)
+	{
+		if (edgeOnBuondary.size() == 1)
+		{
+			break;
+		}
+
+		// Find next 
+		bool found =false;
+		for (int i=0; i<edgeOnBuondary.size(); i++)
+		{
+			Vec2i curE = edges->at(edgeOnBuondary[i]);
+			if (curPIdx==curE[0])
+			{
+				boundLoop.push_back(curE[1]);
+				curPIdx = curE[1];
+				edgeOnBuondary.erase(edgeOnBuondary.begin()+i);
+				found = true;
+				break;
+			}
+			else if (curPIdx == curE[1])
+			{
+				boundLoop.push_back(curE[0]);
+				curPIdx = curE[0];
+				edgeOnBuondary.erase(edgeOnBuondary.begin()+i);
+				found=true;
+				break;
+			}
+		}
+
+		ASSERT(found);//??
+
+	}
+
+
+	conterClockWiseLoop(surfTopo, idxOfRemoveTri, boundLoop);
+	boundLoops.push_back(boundLoop);
+
+	return true;
+}
 bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRemoveTri, std::vector<arrayInt>& boundLoops, arrayInt *edgeToRemove)
 {
 	std::vector<arrayInt>* faceAroundEdge = surfTopo->facesAroundEdge();
@@ -305,6 +437,7 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 	arrayInt edgeRemove;
 
 
+
 	arrayInt allEdge;
 	for (int i=0; i<idxOfRemoveTri.size(); i++)
 	{
@@ -315,26 +448,45 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 		}
 	}
 
-	while(allEdge.size()>0)
+	std::sort(allEdge.begin(), allEdge.end());
+
+	for (int i=0; i<allEdge.size(); i++)
 	{
-		int curE = allEdge[0];
-		allEdge.erase(allEdge.begin());
-		bool found = false;
-		for (int i=0; i<allEdge.size(); i++)
+		if (i==allEdge.size()-1)
 		{
-			if (curE == allEdge[i])
-			{
-				found = true;
-				edgeRemove.push_back(curE);
-				allEdge.erase(allEdge.begin()+i);
-				break;
-			}
+			edgeOnBuondary.push_back(allEdge[i]);
+			continue;
 		}
-		if (!found)
+		if (allEdge[i]==allEdge[i+1])
 		{
-			edgeOnBuondary.push_back(curE);
+			edgeRemove.push_back(allEdge[i]);
+			i++;
 		}
+		else
+			edgeOnBuondary.push_back(allEdge[i]);
 	}
+
+
+// 	while(allEdge.size()>0)
+// 	{
+// 		int curE = allEdge[0];
+// 		allEdge.erase(allEdge.begin());
+// 		bool found = false;
+// 		for (int i=0; i<allEdge.size(); i++)
+// 		{
+// 			if (curE == allEdge[i])
+// 			{
+// 				found = true;
+// 				edgeRemove.push_back(curE);
+// 				allEdge.erase(allEdge.begin()+i);
+// 				break;
+// 			}
+// 		}
+// 		if (!found)
+// 		{
+// 			edgeOnBuondary.push_back(curE);
+// 		}
+// 	}
 
 	if (edgeToRemove)
 		edgeToRemove->insert(edgeToRemove->end(), edgeRemove.begin(), edgeRemove.end());
@@ -344,6 +496,8 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 		return true;//??
 		return false;
 	}
+
+
 
 	// 2. Point mesh
 	arrayInt pointsIdx;
@@ -355,14 +509,18 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 	func.arrangeVector(pointsIdx);
 
 	// 3. Find boundary loop
+
 	while(pointsIdx.size()>0) // For entire split -> there will be 2 bound loop, but sometime, it is hole
 	{
+
+
 		arrayInt boundLoop;
 		boundLoop.push_back(pointsIdx[0]);
 		pointsIdx.erase(pointsIdx.begin());
 		while(pointsIdx.size()>0)
 		{
 			int curP = boundLoop[boundLoop.size()-1];
+
 			bool found = false;
 			for (int i = 0; i<pointsIdx.size(); i++)
 			{
@@ -381,6 +539,9 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 					}
 				}
 			}
+
+
+
 			int eIdx;
 			if (boundLoop.size()>3 && GeometricFunc::isEdge(boundLoop[0], boundLoop.back(), edges, eIdx)
 				&& func.isElementInVector(edgeOnBuondary, eIdx) &&
@@ -392,10 +553,15 @@ bool eLineTool::findBoundaryLoop( TopologyContainer* surfTopo, arrayInt idxOfRem
 			{
 				return false;
 			}
+
 		}
+
+
+
 		CHECK(boundLoop.size()>=3, "eSurfaceCutting::findBoundaryLoop3");
 		conterClockWiseLoop(surfTopo, idxOfRemoveTri, boundLoop);
 		boundLoops.push_back(boundLoop);
+
 	}
 
 	return true;
@@ -587,6 +753,8 @@ void eLineTool::cut9( SurfaceObj* obj )
 	m_collidedTriIdx.clear();
 	CollisionManager colMng;
 	arrayInt toolTriIdx;
+
+
 	colMng.collisionBtwTrisAndTrisWithBVH(&m_allPoints, &m_face, s_points, s_faces, BVH, toolTriIdx, m_collidedTriIdx);
 	func.arrangeVector(m_collidedTriIdx);
 }
@@ -594,20 +762,29 @@ void eLineTool::cut9( SurfaceObj* obj )
 
 void eLineTool::stepDebug9()
 {
+	CTimeTick time;
+	time.SetStart();
+
 	// Bounding loop
 	std::vector<arrayInt> boundLoops;
-	findBoundaryLoop(s_surfObj->container(), m_collidedTriIdx, boundLoops);
+	findBoundaryLoopOptimize(s_surfObj->container(), m_collidedTriIdx, boundLoops);
 	ASSERT(boundLoops.size()==1);
 	m_bound = boundLoops[0];
 	
 	// triangulate
 	m_addedFaces.clear();
 	m_addedPoints.clear();
-	
+
+	time.SetEnd();
+	Utility::urgentLog("findBoundaryLoop: %lf", time.GetTick());
 	fillConcaveTri(m_bound, m_addedFaces);
+
+	time.SetStart();
 
 	if (m_bound.size()>=3)
 		triangulate(m_bound);
+	time.SetEnd();
+	Utility::urgentLog("Meshing: %lf", time.GetTick());
 
 	arrayInt generated = m_collidedTriIdx;
 	objTopoModifer(s_surfObj, generated, m_collidedTriIdx, m_addedFaces);
@@ -640,8 +817,13 @@ void eLineTool::triangulate( arrayInt &boundLoop )
 	float largestDistance = 0;
 	arrayInt boundLoop1, boundLoop2;
 	int idx1, idx2;
+	bool shouldOut = false;
 	for (int i=0; i<boundLoop.size(); i++)
 	{
+		if (shouldOut)
+		{
+			break;
+		}
 		for (int j=0; j<boundLoop.size(); j++)
 		{
 			if (i==j || abs(i-j)==1 || abs(i-j)==boundLoop.size()-1)
@@ -678,10 +860,10 @@ void eLineTool::triangulate( arrayInt &boundLoop )
 				if (curIdx==boundLoop.size())
 					curIdx=0;
 			}
-			if (!(isLegalBound(bound1) && isLegalBound(bound2)))
-			{
-				continue;
-			}
+// 			if (!(isLegalBound(bound1) && isLegalBound(bound2)))
+// 			{
+// 				continue;
+// 			}
 	
 			// Edge near mid point the most
 // 			Vec3f curMidP = (s_points->at(boundLoop[i]) + s_points->at(boundLoop[j]))/2;
@@ -696,15 +878,18 @@ void eLineTool::triangulate( arrayInt &boundLoop )
 // 			}
 
 			// Edge far cuttool the most
-			float dis = distanceToLineSeg(s_points->at(boundLoop[i]), s_points->at(boundLoop[j]));
-			if (largestDistance < dis)
+// 			float dis = distanceToLineSeg(s_points->at(boundLoop[i]), s_points->at(boundLoop[j]));
+// 			if (largestDistance < dis)
 			{
-				largestDistance = dis;
+	//			largestDistance = dis;
 				boundLoop1=bound1;
 				boundLoop2=bound2;
 				idx1 = boundLoop[j];
 				idx2 = boundLoop[i];
 			}
+
+			shouldOut = true;
+			break;
 
 			// Good angle
 // 			float var1 = varianceAngle(s_points, bound1);

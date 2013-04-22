@@ -1,0 +1,8 @@
+
+findBoundaryLoop: 0.075899
+Meshing: 0.129626
+Mesh generating: 18.910280
+Time for intersection detect: 0.135880
+findBoundaryLoop: 0.050031
+Meshing: 0.049747
+Mesh generating: 8.962932

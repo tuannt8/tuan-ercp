@@ -83,3 +83,5 @@ typedef std::vector<Vec3i> arrayVec3i;
 typedef std::vector<int> arrayInt;
 typedef std::vector<Vec2i> arrayVec2i;
 
+#define MAX 100000000
+#define MIN -100000000

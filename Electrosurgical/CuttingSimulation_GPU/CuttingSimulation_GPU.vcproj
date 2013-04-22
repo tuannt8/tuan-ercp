@@ -530,6 +530,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\simpleRemesh.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\simpleRemesh.h"
+				>
+			</File>
+			<File
 				RelativePath=".\Utility.cpp"
 				>
 			</File>
