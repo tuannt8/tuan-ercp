@@ -78,6 +78,8 @@ private:
 	void conterClockWiseLoop( TopologyContainer* surfTopo, arrayInt areaTriIdx, arrayInt& boundPointLoop );
 	bool findBoundaryLoop(TopologyContainer* surfTopo, arrayInt idxOfRemoveTri, 
 						std::vector<arrayInt>& boundLoops, arrayInt *edgeToRemove = NULL);
+	bool findBoundaryLoopOptimize(TopologyContainer* surfTopo, arrayInt idxOfRemoveTri, 
+		std::vector<arrayInt>& boundLoops, arrayInt *edgeToRemove = NULL);
 	float distanceToLineSeg( Vec3f pt1, Vec3f pt2 );
 	float varianceAngle( arrayVec3f* points, arrayInt bound );
 	float varianceAngle( arrayVec3f* points, int idx1, int idx2, int idx3 );

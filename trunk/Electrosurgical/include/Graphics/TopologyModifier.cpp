@@ -19,6 +19,30 @@ void TopologyModifier::addPoints(TopologyContainer* container, std::vector<Vec3f
 	for(int i=0;i<points.size();i++)
 		addPoint(container, points[i]);
 }
+
+void TopologyModifier::addPoints( TopologyContainer* container, std::vector<Vec3f>* point0, std::vector<Vec3f>* points )
+{
+	for(int i=0;i<points->size();i++)
+		addPoint(container, point0->at(i), points->at(i));
+}
+
+void TopologyModifier::addPoint( TopologyContainer* container, Vec3f _point0, Vec3f _point )
+{
+	std::vector<Vec3f>* point0=container->point0();
+	std::vector<Vec3f>* point=container->point();
+	point0->push_back(_point0);
+	point->push_back(_point);
+
+	//update topology information
+	std::vector<std::vector<int>>* pointsAroundPoint=container->pointsAroundPoint();
+	std::vector<std::vector<int>>* edgesAroundPoint=container->edgesAroundPoint();
+	std::vector<std::vector<int>>* facesAroundPoint=container->facesAroundPoint();
+
+	pointsAroundPoint->resize(point->size());
+	edgesAroundPoint->resize(point->size());
+	facesAroundPoint->resize(point->size());
+}
+
 void TopologyModifier::addPoint(TopologyContainer* container, Vec3f _point)
 {
 	std::vector<Vec3f>* point0=container->point0();
