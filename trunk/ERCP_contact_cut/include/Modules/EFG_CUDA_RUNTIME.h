@@ -141,7 +141,8 @@ private:
 	void removeEdgesInCollisionModel(std::vector<int>& idx);
 	void updateNeighborInfo(int idx, std::vector<int>& updatedIdx, std::vector<int>& updatedValue);
 	void updateShapeFuncValue(std::vector<int>& updatedNodeIdx, std::vector<int>& updatedShapeFuncIdx, std::vector<Vec3f>& updatedVal, std::vector<Vec3f>& updatedValInv);
-	
+
+
 
 
 

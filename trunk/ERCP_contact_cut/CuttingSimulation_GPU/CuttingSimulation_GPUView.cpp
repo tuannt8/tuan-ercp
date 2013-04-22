@@ -403,9 +403,9 @@ void CCuttingSimulation_GPUView::OnTimer(UINT_PTR nIDEvent)
 			arrayVec3f toolPoint = m_catheter1.stringPoint();
 			m_CuttingManger.cylinderCutting(&m_Meshfree, &toolPoint, TOOL_RADIUS);
 		}
-	//	m_catheter1.updateCatheterExplicit(Vec3d(0,-10,0));
+		m_catheter1.updateCatheterExplicit(Vec3d(0,-10,0));
 		collisionModel.interactionSimulation(&m_catheter1, &m_Meshfree, dt/n, n);
-
+	//	m_Meshfree.updatePositionExplicit(dt,n);
 
 	}
 
